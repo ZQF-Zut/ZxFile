@@ -43,7 +43,7 @@ namespace ZQF::ZxFilePrivate
 #endif
 
 
-    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<uint8_t> spData, bool isCoverExists, bool isCreateDirectories) -> void;
+    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const uint8_t> spData, bool isCoverExists, bool isCreateDirectories) -> void;
 
 
     // open file via utf8 path

@@ -47,7 +47,7 @@ namespace ZQF::ZxFilePrivate
         path_wide_buffer.get()[pos + 1] = file_name_mask_char_tmp;
     }
 
-    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<uint8_t> spData, bool isCoverExists, bool isCreateDirectories) -> void
+    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const uint8_t> spData, bool isCoverExists, bool isCreateDirectories) -> void
     {
         auto wide_path = PathUtf8ToWide(msPath);
         if (isCreateDirectories) { CreateDirectories(wide_path); }
