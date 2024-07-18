@@ -8,11 +8,11 @@ namespace ZQF::ZxFilePrivate
 #ifdef _WIN32
     static auto PathUtf8ToWide(const std::string_view msPath) -> std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>
     {
-        const auto char_count = static_cast<size_t>(::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, msPath.data(), static_cast<int>(msPath.size()), nullptr, 0));
-        auto buffer = std::make_unique_for_overwrite<wchar_t[]>(char_count + 1);
-        const auto char_count_real = static_cast<size_t>(::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, msPath.data(), static_cast<int>(msPath.size()), buffer.get(), static_cast<int>(char_count)));
+        const size_t buffer_max_chars = (msPath.size() * sizeof(char) + 1) * 2;
+        auto buffer = std::make_unique_for_overwrite<wchar_t[]>(buffer_max_chars);
+        const auto char_count_real = static_cast<size_t>(::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, msPath.data(), static_cast<int>(msPath.size()), buffer.get(), static_cast<int>(buffer_max_chars)));
         buffer[char_count_real] = {};
-        return { { buffer.get(), char_count }, std::move(buffer) };
+        return { std::wstring_view{ buffer.get(), char_count_real }, std::move(buffer) };
     }
 
     static auto CreateDirectories(std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>& rfWidePath) -> void
