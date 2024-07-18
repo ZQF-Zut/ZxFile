@@ -159,7 +159,7 @@ namespace ZQF::ZxFilePrivate
 
     auto SaveDataViaPathImp(const std::string_view msPath, const std::span<uint8_t> spData, bool isCoverExists, bool isCreateDirectories) -> void
     {
-        if (isCreateDirectories) { ZQF::CreateDirectories(msPath); }
+        if (isCreateDirectories) { ZxFilePrivate::CreateDirectories(msPath); }
         constexpr auto create_always = O_CREAT | O_WRONLY | O_TRUNC;
         constexpr auto create_new = O_CREAT | O_WRONLY | O_EXCL;
         const auto file_handle = ::open(msPath.data(), isCoverExists ? create_always : create_new, 0666);  // NOLINT
