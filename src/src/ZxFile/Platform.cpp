@@ -1,6 +1,15 @@
 #include <ZxFile/Platform.h>
-#include <span>
 #include <format>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#elif __linux__
+#include <cstring>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#endif
 
 
 namespace ZQF::ZxFilePrivate
@@ -15,7 +24,7 @@ namespace ZQF::ZxFilePrivate
         return { std::wstring_view{ buffer.get(), char_count_real }, std::move(buffer) };
     }
 
-    static auto CreateDirectories(std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>& rfWidePath) -> void
+    static auto CreateDirectories(const std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>& rfWidePath) -> void
     {
         auto& [path_wide_sv, path_wide_buffer] = rfWidePath;
 
@@ -47,19 +56,20 @@ namespace ZQF::ZxFilePrivate
         path_wide_buffer.get()[pos + 1] = file_name_mask_char_tmp;
     }
 
-    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const uint8_t> spData, bool isCoverExists, bool isCreateDirectories) -> void
+    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const uint8_t> spData, const bool isCoverExists, const bool isCreateDirectories) -> bool
     {
         auto wide_path = PathUtf8ToWide(msPath);
         if (isCreateDirectories) { CreateDirectories(wide_path); }
         const HANDLE hfile = ::CreateFileW(wide_path.first.data(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, isCoverExists ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
-        if (hfile == INVALID_HANDLE_VALUE) { throw std::runtime_error(std::format("ZxFile::SaveDataViaPathImp(): create file error!. msPath: {}", msPath)); }
+        if (hfile == INVALID_HANDLE_VALUE) { return false; }
         DWORD write{};
         (void)::WriteFile(hfile, spData.data(), static_cast<DWORD>(spData.size_bytes()), &write, nullptr);
-        ::CloseHandle(hfile);
+        (void)::CloseHandle(hfile);
+        return true;
     }
 
 
-    auto Open(const std::string_view msPath, OpenMod eMode) -> std::optional<FILE_HANLDE_TYPE>
+    auto Open(const std::string_view msPath, const OpenMod eMode) -> std::optional<FILE_HANLDE_TYPE>
     {
         DWORD access{}, attributes{};
         switch (eMode)
@@ -78,53 +88,54 @@ namespace ZQF::ZxFilePrivate
             break;
         }
 
-        return ::CreateFileW(PathUtf8ToWide(msPath).first.data(), access, FILE_SHARE_READ, nullptr, attributes, FILE_ATTRIBUTE_NORMAL, nullptr);
+        const auto handle = ::CreateFileW(PathUtf8ToWide(msPath).first.data(), access, FILE_SHARE_READ, nullptr, attributes, FILE_ATTRIBUTE_NORMAL, nullptr);
+        return (handle == INVALID_HANDLE_VALUE) ? std::nullopt : std::optional{ handle };
     }
 
-    auto Close(FILE_HANLDE_TYPE hFile) -> bool
+    auto Close(const FILE_HANLDE_TYPE hFile) -> bool
     {
         return ::CloseHandle(hFile) != FALSE;
     }
 
-    auto Flush(FILE_HANLDE_TYPE hFile) -> bool
+    auto Flush(const FILE_HANLDE_TYPE hFile) -> bool
     {
         return ::FlushFileBuffers(hFile) != FALSE;
     }
 
-    auto GetSize(FILE_HANLDE_TYPE hFile) -> std::optional<uint64_t>
+    auto GetSize(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
         LARGE_INTEGER file_size{};
-        return ::GetFileSizeEx(hFile, &file_size) ? std::optional{ static_cast<uint64_t>(file_size.QuadPart) } : std::nullopt;
+        return ::GetFileSizeEx(hFile, &file_size) ? std::optional{ static_cast<std::uint64_t>(file_size.QuadPart) } : std::nullopt;
     }
 
-    auto GetPtr(FILE_HANLDE_TYPE hFile) -> std::optional<uint64_t>
+    auto GetPtr(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
-        LARGE_INTEGER new_file_pointer;
-        LARGE_INTEGER move_distance{ .QuadPart = 0 };
-        bool status = (::SetFilePointerEx(hFile, move_distance, &new_file_pointer, FILE_CURRENT) != FALSE);
-        return status ? std::optional<uint64_t>{ static_cast<uint64_t>(new_file_pointer.QuadPart) } : std::nullopt;
+        LARGE_INTEGER new_pos;
+        const LARGE_INTEGER move_distance{ .QuadPart = 0 };
+        const bool status = (::SetFilePointerEx(hFile, move_distance, &new_pos, FILE_CURRENT) != FALSE);
+        return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
-    auto SetPtr(FILE_HANLDE_TYPE hFile, uint64_t nOffset, MoveWay eWay) -> std::optional<uint64_t>
+    auto SetPtr(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
     {
-        LARGE_INTEGER new_file_pointer;
-        LARGE_INTEGER move_distance = { .QuadPart = static_cast<LONGLONG>((nOffset)) };
-        bool status = (::SetFilePointerEx(hFile, move_distance, &new_file_pointer, static_cast<DWORD>(eWay)) != FALSE);
-        return status ? std::optional<uint64_t>{ static_cast<uint64_t>(new_file_pointer.QuadPart) } : std::nullopt;
+        LARGE_INTEGER new_pos;
+        const LARGE_INTEGER move_distance = { .QuadPart = static_cast<LONGLONG>((nOffset)) };
+        const bool status = (::SetFilePointerEx(hFile, move_distance, &new_pos, static_cast<DWORD>(eWay)) != FALSE);
+        return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
-    auto Read(FILE_HANLDE_TYPE hFile, const std::span<uint8_t> spBuffer) -> std::optional<size_t>
+    auto Read(const FILE_HANLDE_TYPE hFile, const std::span<std::uint8_t> spBuffer) -> std::optional<std::size_t>
     {
         DWORD read{};
-        bool status = (::ReadFile(hFile, spBuffer.data(), static_cast<DWORD>(spBuffer.size_bytes()), &read, nullptr) != FALSE);
-        return status ? std::optional<size_t>{ static_cast<size_t>(read) } : std::nullopt;
+        const bool status = (::ReadFile(hFile, spBuffer.data(), static_cast<DWORD>(spBuffer.size_bytes()), &read, nullptr) != FALSE);
+        return status ? std::optional<std::size_t>{ static_cast<std::size_t>(read) } : std::nullopt;
     }
 
-    auto Write(FILE_HANLDE_TYPE hFile, const std::span<const uint8_t> spData) -> std::optional<size_t>
+    auto Write(const FILE_HANLDE_TYPE hFile, const std::span<const std::uint8_t> spData) -> std::optional<std::size_t>
     {
         DWORD written{};
-        bool status = (::WriteFile(hFile, spData.data(), static_cast<DWORD>(spData.size_bytes()), &written, nullptr) != FALSE);
-        return status ? std::optional<size_t>{ static_cast<size_t>(written) } : std::nullopt;
+        const bool status = (::WriteFile(hFile, spData.data(), static_cast<DWORD>(spData.size_bytes()), &written, nullptr) != FALSE);
+        return status ? std::optional<std::size_t>{ static_cast<std::size_t>(written) } : std::nullopt;
     }
 #else
     static auto CreateDirectories(const std::string_view msPath) -> void
@@ -157,59 +168,69 @@ namespace ZQF::ZxFilePrivate
         }
     }
 
-    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<uint8_t> spData, bool isCoverExists, bool isCreateDirectories) -> void
+    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const std::uint8_t> spData, const bool isCoverExists, const bool isCreateDirectories) -> bool
     {
         if (isCreateDirectories) { ZxFilePrivate::CreateDirectories(msPath); }
         constexpr auto create_always = O_CREAT | O_WRONLY | O_TRUNC;
         constexpr auto create_new = O_CREAT | O_WRONLY | O_EXCL;
         const auto file_handle = ::open(msPath.data(), isCoverExists ? create_always : create_new, 0666);  // NOLINT
-        if (file_handle == -1) { throw std::runtime_error(std::format("ZxMem::RreadAllBytes(): create file failed!", msPath)); }
+        if (file_handle == -1) { return false; }
         ::write(file_handle, spData.data(), spData.size_bytes());
         ::close(file_handle);
+        return true;
     }
-
 
     auto Open(const std::string_view msPath, const OpenMod eMode) -> std::optional<FILE_HANLDE_TYPE>
     {
-        return {};
+        int open_mode{};
+        switch (eMode)
+        {
+        case OpenMod::ReadSafe: open_mode = O_RDONLY; break;
+        case OpenMod::WriteSafe: open_mode = O_CREAT | O_WRONLY | O_EXCL; break;
+        case OpenMod::WriteForce: open_mode = O_CREAT | O_WRONLY | O_TRUNC; break;
+        }
+        const auto file_handle = ::open(msPath.data(), open_mode, 0666);
+        return (file_handle == -1) ? std::nullopt : std::optional{ file_handle };
     }
 
-    auto Close(FILE_HANLDE_TYPE hFile) -> bool
+    auto Close(const FILE_HANLDE_TYPE hFile) -> bool
     {
-        ::close(hFile);
-        return true;
+        return ::close(hFile) ? true : false;
     }
 
-    auto Flush(FILE_HANLDE_TYPE hFile) -> bool
+    auto Flush(const FILE_HANLDE_TYPE hFile) -> bool
     {
-        return true;
+        return ::fsync(hFile) ? true : false;
     }
 
-    auto GetSize(FILE_HANLDE_TYPE hFile) -> std::optional<uint64_t>
+    auto GetSize(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
-        const auto file_size = ::lseek(hFile, 0, SEEK_END);
-        ::lseek(hFile, 0, SEEK_SET);
-        return static_cast<size_t>(file_size);
+        struct ::stat s;
+        return (::fstat(hFile, &s) == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(s.st_size) };
     }
 
-    auto GetPtr(FILE_HANLDE_TYPE hFile) -> std::optional<uint64_t>
+    auto GetPtr(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
-
+        const auto pos = ::lseek64(hFile, 0, SEEK_CUR);
+        return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
     }
 
-    auto SetPtr(FILE_HANLDE_TYPE hFile, uint64_t nOffset, MoveWay eWay) -> std::optional<uint64_t>
+    auto SetPtr(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
     {
-
+        const auto pos = ::lseek64(hFile, static_cast<loff_t>(nOffset), static_cast<int>(eWay));
+        return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
     }
 
-    auto Read(FILE_HANLDE_TYPE hFile, const std::span<uint8_t> spBuffer) -> std::optional<size_t>
+    auto Read(const FILE_HANLDE_TYPE hFile, const std::span<uint8_t> spBuffer) -> std::optional<std::size_t>
     {
-        ::read(hFile, spBuffer.data(), spBuffer.size_bytes());
+        const auto read_bytes = ::read(hFile, spBuffer.data(), spBuffer.size_bytes());
+        return read_bytes != -1 ? std::optional{ static_cast<std::size_t>(read_bytes) } : std::nullopt;
     }
 
-    auto Write(FILE_HANLDE_TYPE hFile, const std::span<const uint8_t> spData) -> std::optional<size_t>
+    auto Write(const FILE_HANLDE_TYPE hFile, const std::span<const std::uint8_t> spData) -> std::optional<std::size_t>
     {
-
+        const auto written_bytes = ::write(hFile, spData.data(), spData.size_bytes());
+        return written_bytes != -1 ? std::optional{ static_cast<std::size_t>(written_bytes) } : std::nullopt;
     }
 #endif
-} // namespace ZQF::ZxMem
+} // namespace ZQF::ZxFilePrivate

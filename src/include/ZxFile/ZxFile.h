@@ -114,9 +114,10 @@ namespace ZQF
         }
 
         template <class T, size_t S>
-        static auto SaveDataViaPath(const std::string_view msPath, const std::span<T, S> spData, bool isForceSave) -> void
+        static auto SaveDataViaPath(const std::string_view msPath, const std::span<T, S> spData, const bool isForceSave = true, const bool isCreateDires = true) -> void
         {
-            ZxFilePrivate::SaveDataViaPathImp(msPath, { reinterpret_cast<const uint8_t*>(spData.data()), spData.size_bytes() }, isForceSave, true);
+           bool status = ZxFilePrivate::SaveDataViaPathImp(msPath, { reinterpret_cast<const std::uint8_t*>(spData.data()), spData.size_bytes() }, isForceSave, isCreateDires);
+           if (status == false) { throw std::runtime_error(std::format("ZxFile::SaveDataViaPath<>(): save data error! -> msPath: {}", msPath)); }
         }
     };
 

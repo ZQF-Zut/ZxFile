@@ -6,7 +6,7 @@ else()
 endif()
 
 # Link
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     # LTCG
     cmake_policy(SET CMP0069 NEW) 
     set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
@@ -27,15 +27,8 @@ endif()
 
 # Compiler
 if(MSVC)
-    # Macro
-    add_definitions(-DUNICODE -D_UNICODE)
-    
-    # Compile Flags
-    add_compile_options(/W4)
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         add_compile_options(/Gy)
         add_compile_options(/Zc:inline)
     endif()
-else()
-    add_compile_options(-Wextra)
 endif()
