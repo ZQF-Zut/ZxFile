@@ -17,50 +17,50 @@ namespace ZQF::ZxFilePrivate
 #ifdef _WIN32
     static auto PathUtf8ToWide(const std::string_view msPath) -> std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>
     {
-        const size_t buffer_max_chars = (msPath.size() * sizeof(char) + 1) * 2;
+        const std::size_t buffer_max_chars = (msPath.size() * sizeof(char) + 1) * 2;
         auto buffer = std::make_unique_for_overwrite<wchar_t[]>(buffer_max_chars);
-        const auto char_count_real = static_cast<size_t>(::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, msPath.data(), static_cast<int>(msPath.size()), buffer.get(), static_cast<int>(buffer_max_chars)));
+        const auto char_count_real = static_cast<std::size_t>(::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, msPath.data(), static_cast<int>(msPath.size()), buffer.get(), static_cast<int>(buffer_max_chars)));
         buffer[char_count_real] = {};
         return { std::wstring_view{ buffer.get(), char_count_real }, std::move(buffer) };
     }
 
-    static auto CreateDirectories(const std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>& rfWidePath) -> void
+    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const std::uint8_t> spData, const bool isCoverExists, const bool isCreateDirectories) -> bool
     {
-        auto& [path_wide_sv, path_wide_buffer] = rfWidePath;
-
-        const auto pos = path_wide_sv.rfind(L'/');
-        if ((pos == std::wstring_view::npos) || (pos == 1)) { return; }
-
-        const auto file_name_mask_char_tmp = path_wide_buffer.get()[pos + 1];
-        path_wide_buffer.get()[pos + 1] = {};
-        {
-            wchar_t* cur_path_cstr = path_wide_buffer.get();
-            const wchar_t* org_path_cstr = path_wide_buffer.get();
-
-            while (*cur_path_cstr++ != L'\0')
+        auto fn_create_directories = [](const std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>& rfWidePath) -> void
             {
-                if (*cur_path_cstr != L'/') { continue; }
+                auto& [path_wide_sv, path_wide_buffer] = rfWidePath;
 
-                const wchar_t slash_char_tmp = *cur_path_cstr;
-                *cur_path_cstr = {};
+                const auto pos = path_wide_sv.rfind(L'/');
+                if ((pos == std::wstring_view::npos) || (pos == 1)) { return; }
+
+                const auto file_name_mask_char_tmp = path_wide_buffer.get()[pos + 1];
+                path_wide_buffer.get()[pos + 1] = {};
                 {
-                    if (::GetFileAttributesW(org_path_cstr) == INVALID_FILE_ATTRIBUTES)
+                    wchar_t* cur_path_cstr = path_wide_buffer.get();
+                    const wchar_t* org_path_cstr = path_wide_buffer.get();
+
+                    while (*cur_path_cstr++ != L'\0')
                     {
-                        ::CreateDirectoryW(org_path_cstr, nullptr);
+                        if (*cur_path_cstr != L'/') { continue; }
+
+                        const wchar_t slash_char_tmp = *cur_path_cstr;
+                        *cur_path_cstr = {};
+                        {
+                            if (::GetFileAttributesW(org_path_cstr) == INVALID_FILE_ATTRIBUTES)
+                            {
+                                ::CreateDirectoryW(org_path_cstr, nullptr);
+                            }
+                        }
+                        *cur_path_cstr = slash_char_tmp;
+                        cur_path_cstr++;
                     }
                 }
-                *cur_path_cstr = slash_char_tmp;
-                cur_path_cstr++;
-            }
-        }
-        path_wide_buffer.get()[pos + 1] = file_name_mask_char_tmp;
-    }
+                path_wide_buffer.get()[pos + 1] = file_name_mask_char_tmp;
+            };
 
-    auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const uint8_t> spData, const bool isCoverExists, const bool isCreateDirectories) -> bool
-    {
         auto wide_path = PathUtf8ToWide(msPath);
-        if (isCreateDirectories) { CreateDirectories(wide_path); }
-        const HANDLE hfile = ::CreateFileW(wide_path.first.data(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, isCoverExists ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (isCreateDirectories) { fn_create_directories(wide_path); }
+        const auto hfile = ::CreateFileW(wide_path.first.data(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, isCoverExists ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
         if (hfile == INVALID_HANDLE_VALUE) { return false; }
         DWORD write{};
         (void)::WriteFile(hfile, spData.data(), static_cast<DWORD>(spData.size_bytes()), &write, nullptr);
@@ -138,39 +138,39 @@ namespace ZQF::ZxFilePrivate
         return status ? std::optional<std::size_t>{ static_cast<std::size_t>(written) } : std::nullopt;
     }
 #else
-    static auto CreateDirectories(const std::string_view msPath) -> void
-    {
-        const auto pos = msPath.rfind('/');
-        if ((pos == std::string_view::npos) || (pos == 1)) { return; }
-
-        auto path_buffer = std::make_unique_for_overwrite<char[]>(msPath.size());
-        std::memcpy(path_buffer.get(), msPath.data(), msPath.size());
-
-        path_buffer.get()[pos + 1] = {}; // rm file_name
-
-        char* cur_path_cstr = path_buffer.get();
-        const char* org_path_cstr = path_buffer.get();
-
-        while (*cur_path_cstr++ != '\0')
-        {
-            if (*cur_path_cstr != '/') { continue; }
-
-            const char slash_char_tmp = *cur_path_cstr;
-            *cur_path_cstr = {};
-            {
-                if (::access(org_path_cstr, X_OK) == -1)
-                {
-                    ::mkdir(org_path_cstr, 0777);
-                }
-            }
-            *cur_path_cstr = slash_char_tmp;
-            cur_path_cstr++;
-        }
-    }
-
     auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const std::uint8_t> spData, const bool isCoverExists, const bool isCreateDirectories) -> bool
     {
-        if (isCreateDirectories) { ZxFilePrivate::CreateDirectories(msPath); }
+        auto fn_create_directories = [](const std::string_view msPath) -> void
+        {
+            const auto pos = msPath.rfind('/');
+            if ((pos == std::string_view::npos) || (pos == 1)) { return; }
+
+            auto path_buffer = std::make_unique_for_overwrite<char[]>(msPath.size());
+            std::memcpy(path_buffer.get(), msPath.data(), msPath.size());
+
+            path_buffer.get()[pos + 1] = {}; // rm file_name
+
+            char* cur_path_cstr = path_buffer.get();
+            const char* org_path_cstr = path_buffer.get();
+
+            while (*cur_path_cstr++ != '\0')
+            {
+                if (*cur_path_cstr != '/') { continue; }
+
+                const char slash_char_tmp = *cur_path_cstr;
+                *cur_path_cstr = {};
+                {
+                    if (::access(org_path_cstr, X_OK) == -1)
+                    {
+                        ::mkdir(org_path_cstr, 0777);
+                    }
+                }
+                *cur_path_cstr = slash_char_tmp;
+                cur_path_cstr++;
+            }
+        };
+
+        if (isCreateDirectories) { fn_create_directories(msPath); }
         constexpr auto create_always = O_CREAT | O_WRONLY | O_TRUNC;
         constexpr auto create_new = O_CREAT | O_WRONLY | O_EXCL;
         const auto file_handle = ::open(msPath.data(), isCoverExists ? create_always : create_new, 0666);  // NOLINT
