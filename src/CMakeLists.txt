@@ -25,5 +25,5 @@ target_compile_options("${PROJECT_NAME}" PRIVATE "$<$<CXX_COMPILER_ID:MSVC>:/utf
 if(MSVC)
     target_compile_options("${PROJECT_NAME}" PRIVATE /W4)
 else()
-    target_compile_options("${PROJECT_NAME}" PRIVATE -Wextra)
+    target_compile_options("${PROJECT_NAME}" PRIVATE -Wall -Wextra)
 endif()

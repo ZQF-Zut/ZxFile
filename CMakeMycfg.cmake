@@ -22,7 +22,17 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(BUILD_SHARED_LIBS OFF)
 
     # Static Runtime
-    set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
+    if(MSVC)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
+    else()
+        add_compile_options(-ffunction-sections)
+        add_compile_options(-fdata-sections)
+        add_link_options(-static)
+        add_link_options(-Wl,--gc-sections)
+        if(NOT CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+            add_link_options(-s)
+        endif()
+    endif()
 endif()
 
 # Compiler
