@@ -195,41 +195,41 @@ namespace ZQF::ZxFilePrivate
 
     auto Close(const FILE_HANLDE_TYPE hFile) -> bool
     {
-        return ::close(static_cast<const int>(hFile)) ? true : false;
+        return ::close(static_cast<int>(hFile)) ? true : false;
     }
 
     auto Flush(const FILE_HANLDE_TYPE hFile) -> bool
     {
-        return ::fsync(static_cast<const int>(hFile)) ? true : false;
+        return ::fsync(static_cast<int>(hFile)) ? true : false;
     }
 
     auto GetSize(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
         struct ::stat s;
-        return (::fstat(static_cast<const int>(hFile), &s) == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(s.st_size) };
+        return (::fstat(static_cast<int>(hFile), &s) == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(s.st_size) };
     }
 
     auto GetPtr(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
-        const auto pos = ::lseek64(static_cast<const int>(hFile), 0, SEEK_CUR);
+        const auto pos = ::lseek64(static_cast<int>(hFile), 0, SEEK_CUR);
         return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
     }
 
     auto SetPtr(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
     {
-        const auto pos = ::lseek64(static_cast<const int>(hFile), static_cast<loff_t>(nOffset), static_cast<int>(eWay));
+        const auto pos = ::lseek64(static_cast<int>(hFile), static_cast<loff_t>(nOffset), static_cast<int>(eWay));
         return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
     }
 
     auto Read(const FILE_HANLDE_TYPE hFile, const std::span<uint8_t> spBuffer) -> std::optional<std::size_t>
     {
-        const auto read_bytes = ::read(static_cast<const int>(hFile), spBuffer.data(), spBuffer.size_bytes());
+        const auto read_bytes = ::read(static_cast<int>(hFile), spBuffer.data(), spBuffer.size_bytes());
         return read_bytes != -1 ? std::optional{ static_cast<std::size_t>(read_bytes) } : std::nullopt;
     }
 
     auto Write(const FILE_HANLDE_TYPE hFile, const std::span<const std::uint8_t> spData) -> std::optional<std::size_t>
     {
-        const auto written_bytes = ::write(static_cast<const int>(hFile), spData.data(), spData.size_bytes());
+        const auto written_bytes = ::write(static_cast<int>(hFile), spData.data(), spData.size_bytes());
         return written_bytes != -1 ? std::optional{ static_cast<std::size_t>(written_bytes) } : std::nullopt;
     }
 #endif
