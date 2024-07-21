@@ -89,30 +89,30 @@ namespace ZQF::ZxFilePrivate
         }
 
         const auto handle = ::CreateFileW(PathUtf8ToWide(msPath).first.data(), access, FILE_SHARE_READ, nullptr, attributes, FILE_ATTRIBUTE_NORMAL, nullptr);
-        return (handle == INVALID_HANDLE_VALUE) ? std::nullopt : std::optional{ handle };
+        return (handle == INVALID_HANDLE_VALUE) ? std::nullopt : std::optional{ reinterpret_cast<std::uintptr_t>(handle) };
     }
 
     auto Close(const FILE_HANLDE_TYPE hFile) -> bool
     {
-        return ::CloseHandle(hFile) != FALSE;
+        return ::CloseHandle(reinterpret_cast<HANDLE>(hFile)) != FALSE;
     }
 
     auto Flush(const FILE_HANLDE_TYPE hFile) -> bool
     {
-        return ::FlushFileBuffers(hFile) != FALSE;
+        return ::FlushFileBuffers(reinterpret_cast<const HANDLE>(hFile)) != FALSE;
     }
 
     auto GetSize(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
         LARGE_INTEGER file_size{};
-        return ::GetFileSizeEx(hFile, &file_size) ? std::optional{ static_cast<std::uint64_t>(file_size.QuadPart) } : std::nullopt;
+        return ::GetFileSizeEx(reinterpret_cast<const HANDLE>(hFile), &file_size) ? std::optional{ static_cast<std::uint64_t>(file_size.QuadPart) } : std::nullopt;
     }
 
     auto GetPtr(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
         LARGE_INTEGER new_pos;
         const LARGE_INTEGER move_distance{ .QuadPart = 0 };
-        const bool status = (::SetFilePointerEx(hFile, move_distance, &new_pos, FILE_CURRENT) != FALSE);
+        const bool status = (::SetFilePointerEx(reinterpret_cast<const HANDLE>(hFile), move_distance, &new_pos, FILE_CURRENT) != FALSE);
         return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
@@ -120,21 +120,21 @@ namespace ZQF::ZxFilePrivate
     {
         LARGE_INTEGER new_pos;
         const LARGE_INTEGER move_distance = { .QuadPart = static_cast<LONGLONG>((nOffset)) };
-        const bool status = (::SetFilePointerEx(hFile, move_distance, &new_pos, static_cast<DWORD>(eWay)) != FALSE);
+        const bool status = (::SetFilePointerEx(reinterpret_cast<const HANDLE>(hFile), move_distance, &new_pos, static_cast<DWORD>(eWay)) != FALSE);
         return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
     auto Read(const FILE_HANLDE_TYPE hFile, const std::span<std::uint8_t> spBuffer) -> std::optional<std::size_t>
     {
         DWORD read{};
-        const bool status = (::ReadFile(hFile, spBuffer.data(), static_cast<DWORD>(spBuffer.size_bytes()), &read, nullptr) != FALSE);
+        const bool status = (::ReadFile(reinterpret_cast<const HANDLE>(hFile), spBuffer.data(), static_cast<DWORD>(spBuffer.size_bytes()), &read, nullptr) != FALSE);
         return status ? std::optional<std::size_t>{ static_cast<std::size_t>(read) } : std::nullopt;
     }
 
     auto Write(const FILE_HANLDE_TYPE hFile, const std::span<const std::uint8_t> spData) -> std::optional<std::size_t>
     {
         DWORD written{};
-        const bool status = (::WriteFile(hFile, spData.data(), static_cast<DWORD>(spData.size_bytes()), &written, nullptr) != FALSE);
+        const bool status = (::WriteFile(reinterpret_cast<const HANDLE>(hFile), spData.data(), static_cast<DWORD>(spData.size_bytes()), &written, nullptr) != FALSE);
         return status ? std::optional<std::size_t>{ static_cast<std::size_t>(written) } : std::nullopt;
     }
 #else
@@ -190,46 +190,46 @@ namespace ZQF::ZxFilePrivate
         case OpenMod::WriteForce: open_mode = O_CREAT | O_WRONLY | O_TRUNC; break;
         }
         const auto file_handle = ::open(msPath.data(), open_mode, 0666);
-        return (file_handle == -1) ? std::nullopt : std::optional{ file_handle };
+        return (file_handle == -1) ? std::nullopt : std::optional{ static_cast<std::uintptr_t>(file_handle) };
     }
 
     auto Close(const FILE_HANLDE_TYPE hFile) -> bool
     {
-        return ::close(hFile) ? true : false;
+        return ::close(static_cast<const int>(hFile)) ? true : false;
     }
 
     auto Flush(const FILE_HANLDE_TYPE hFile) -> bool
     {
-        return ::fsync(hFile) ? true : false;
+        return ::fsync(static_cast<const int>(hFile)) ? true : false;
     }
 
     auto GetSize(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
         struct ::stat s;
-        return (::fstat(hFile, &s) == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(s.st_size) };
+        return (::fstat(static_cast<const int>(hFile), &s) == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(s.st_size) };
     }
 
     auto GetPtr(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
-        const auto pos = ::lseek64(hFile, 0, SEEK_CUR);
+        const auto pos = ::lseek64(static_cast<const int>(hFile), 0, SEEK_CUR);
         return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
     }
 
     auto SetPtr(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
     {
-        const auto pos = ::lseek64(hFile, static_cast<loff_t>(nOffset), static_cast<int>(eWay));
+        const auto pos = ::lseek64(static_cast<const int>(hFile), static_cast<loff_t>(nOffset), static_cast<int>(eWay));
         return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
     }
 
     auto Read(const FILE_HANLDE_TYPE hFile, const std::span<uint8_t> spBuffer) -> std::optional<std::size_t>
     {
-        const auto read_bytes = ::read(hFile, spBuffer.data(), spBuffer.size_bytes());
+        const auto read_bytes = ::read(static_cast<const int>(hFile), spBuffer.data(), spBuffer.size_bytes());
         return read_bytes != -1 ? std::optional{ static_cast<std::size_t>(read_bytes) } : std::nullopt;
     }
 
     auto Write(const FILE_HANLDE_TYPE hFile, const std::span<const std::uint8_t> spData) -> std::optional<std::size_t>
     {
-        const auto written_bytes = ::write(hFile, spData.data(), spData.size_bytes());
+        const auto written_bytes = ::write(static_cast<const int>(hFile), spData.data(), spData.size_bytes());
         return written_bytes != -1 ? std::optional{ static_cast<std::size_t>(written_bytes) } : std::nullopt;
     }
 #endif

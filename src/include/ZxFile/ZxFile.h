@@ -13,11 +13,36 @@ namespace ZQF
         using MoveWay = ZxFilePrivate::MoveWay;
 
     private:
-        ZxFilePrivate::FILE_HANLDE_TYPE m_hFile{};
+        ZxFilePrivate::FILE_HANLDE_TYPE m_hFile = ZxFilePrivate::FILE_HANLDE_INVALID;
 
     public:
+        ZxFile()
+        {
+
+        }
+
         ZxFile(const std::string_view msPath, const OpenMod eMode)
         {
+            this->Open(msPath, eMode);
+        }
+
+        ZxFile(const std::u8string_view phPath, const OpenMod eMode)
+        {
+            this->Open({ reinterpret_cast<const char*>(phPath.data()), phPath.size() }, eMode);
+        }
+
+        ~ZxFile()
+        {
+            this->Close();
+        }
+
+        auto Open(const std::string_view msPath, const OpenMod eMode) -> void
+        {
+            if (m_hFile != ZxFilePrivate::FILE_HANLDE_INVALID)
+            {
+                throw std::runtime_error(std::format("ZxFile: already holds a file handle -> msPath: {}", msPath));
+            }
+
             if (const auto file_id_opt = ZxFilePrivate::Open(msPath, eMode))
             {
                 m_hFile = *file_id_opt;
@@ -28,19 +53,17 @@ namespace ZQF
             }
         }
 
-        ~ZxFile()
-        {
-            this->Close();
-        }
-
         auto Flush() const -> bool
         {
             return ZxFilePrivate::Flush(m_hFile);
         }
 
-        auto Close() const -> bool
+        auto Close() -> bool
         {
-            return ZxFilePrivate::Close(m_hFile);
+            if (m_hFile == ZxFilePrivate::FILE_HANLDE_INVALID) { return true; }
+            bool status = ZxFilePrivate::Close(m_hFile);
+            m_hFile = ZxFilePrivate::FILE_HANLDE_INVALID;
+            return status;
         }
 
         template <class T, size_t S>
@@ -63,6 +86,11 @@ namespace ZQF
         auto GetSize() const -> std::optional<uint64_t>
         {
             return ZxFilePrivate::GetSize(m_hFile);
+        }
+
+        auto IsOpen() const -> bool
+        {
+            return m_hFile == ZxFilePrivate::FILE_HANLDE_INVALID ? false : true;
         }
 
         template<class T>
@@ -116,8 +144,8 @@ namespace ZQF
         template <class T, size_t S>
         static auto SaveDataViaPath(const std::string_view msPath, const std::span<T, S> spData, const bool isForceSave = true, const bool isCreateDires = true) -> void
         {
-           bool status = ZxFilePrivate::SaveDataViaPathImp(msPath, { reinterpret_cast<const std::uint8_t*>(spData.data()), spData.size_bytes() }, isForceSave, isCreateDires);
-           if (status == false) { throw std::runtime_error(std::format("ZxFile::SaveDataViaPath<>(): save data error! -> msPath: {}", msPath)); }
+            bool status = ZxFilePrivate::SaveDataViaPathImp(msPath, { reinterpret_cast<const std::uint8_t*>(spData.data()), spData.size_bytes() }, isForceSave, isCreateDires);
+            if (status == false) { throw std::runtime_error(std::format("ZxFile::SaveDataViaPath<>(): save data error! -> msPath: {}", msPath)); }
         }
     };
 

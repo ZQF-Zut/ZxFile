@@ -8,17 +8,14 @@
 
 namespace ZQF::ZxFilePrivate
 {
-#ifdef _WIN32
-    using FILE_HANLDE_TYPE = void*;
-#elif __linux__
-    using FILE_HANLDE_TYPE = int;
-#endif
+    using FILE_HANLDE_TYPE = std::uintptr_t;
+    constexpr FILE_HANLDE_TYPE FILE_HANLDE_INVALID = UINTPTR_MAX;
 
-    enum class MoveWay : size_t
+    enum class MoveWay : std::size_t
     {
-        Beg = static_cast<size_t>(0),
-        Cur = static_cast<size_t>(1),
-        End = static_cast<size_t>(2)
+        Beg = static_cast<std::size_t>(0),
+        Cur = static_cast<std::size_t>(1),
+        End = static_cast<std::size_t>(2)
     };
 
     enum class OpenMod
