@@ -17,11 +17,12 @@ namespace ZQF::ZxFilePrivate
 #ifdef _WIN32
     static auto PathUtf8ToWide(const std::string_view msPath) -> std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>
     {
-        const std::size_t buffer_max_chars = (msPath.size() * sizeof(char) + 1) * 2;
+        const auto buffer_max_chars = ((msPath.size() * sizeof(char)) + 1) * 2;
         auto buffer = std::make_unique_for_overwrite<wchar_t[]>(buffer_max_chars);
         const auto char_count_real = static_cast<std::size_t>(::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, msPath.data(), static_cast<int>(msPath.size()), buffer.get(), static_cast<int>(buffer_max_chars)));
         buffer[char_count_real] = {};
-        return { std::wstring_view{ buffer.get(), char_count_real }, std::move(buffer) };
+        const std::wstring_view cvt_sv{ buffer.get(), char_count_real };
+        return { cvt_sv, std::unique_ptr<wchar_t[]>{ std::move(buffer) } };
     }
 
     auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const std::uint8_t> spData, const bool isCoverExists, const bool isCreateDirectories) -> bool

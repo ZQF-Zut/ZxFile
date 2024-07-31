@@ -16,8 +16,11 @@ auto main() -> int
 
         {
             ZQF::ZxFile ofs{ "123.txt", ZQF::ZxFile::OpenMod::WriteForce };
-            ofs << std::uint32_t(12);
-            ofs << std::uint64_t(0x112233);
+            if (ofs)
+            {
+                ofs << std::uint32_t(12);
+                ofs << std::uint64_t(0x112233);
+            }
         }
 
         try
