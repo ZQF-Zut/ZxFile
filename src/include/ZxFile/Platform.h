@@ -13,7 +13,7 @@ namespace ZQF::ZxFilePrivate
 
     enum class MoveWay : std::size_t
     {
-        Beg = static_cast<std::size_t>(0),
+        Set = static_cast<std::size_t>(0),
         Cur = static_cast<std::size_t>(1),
         End = static_cast<std::size_t>(2)
     };
@@ -38,13 +38,13 @@ namespace ZQF::ZxFilePrivate
     auto Flush(const FILE_HANLDE_TYPE hFile) -> bool;
 
     // get file size
-    auto GetSize(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>;
+    auto Bytes(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>;
 
     // get current file pointer
-    auto GetPtr(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>;
+    auto Tell(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>;
 
     // set file pointer
-    auto SetPtr(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>;
+    auto Seek(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>;
 
     // read data from file
     auto Read(const FILE_HANLDE_TYPE hFile, const std::span<std::uint8_t> spBuffer) -> std::optional<std::size_t>;

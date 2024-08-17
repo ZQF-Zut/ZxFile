@@ -103,13 +103,13 @@ namespace ZQF::ZxFilePrivate
         return ::FlushFileBuffers(reinterpret_cast<const HANDLE>(hFile)) != FALSE;
     }
 
-    auto GetSize(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
+    auto Bytes(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
         LARGE_INTEGER file_size{};
         return ::GetFileSizeEx(reinterpret_cast<const HANDLE>(hFile), &file_size) ? std::optional{ static_cast<std::uint64_t>(file_size.QuadPart) } : std::nullopt;
     }
 
-    auto GetPtr(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
+    auto Tell(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
         LARGE_INTEGER new_pos;
         const LARGE_INTEGER move_distance{ .QuadPart = 0 };
@@ -117,7 +117,7 @@ namespace ZQF::ZxFilePrivate
         return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
-    auto SetPtr(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
+    auto Seek(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
     {
         LARGE_INTEGER new_pos;
         const LARGE_INTEGER move_distance = { .QuadPart = static_cast<LONGLONG>((nOffset)) };
@@ -204,19 +204,19 @@ namespace ZQF::ZxFilePrivate
         return ::fsync(static_cast<int>(hFile)) ? true : false;
     }
 
-    auto GetSize(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
+    auto Bytes(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
         struct ::stat s;
         return (::fstat(static_cast<int>(hFile), &s) == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(s.st_size) };
     }
 
-    auto GetPtr(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
+    auto Tell(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>
     {
         const auto pos = ::lseek64(static_cast<int>(hFile), 0, SEEK_CUR);
         return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
     }
 
-    auto SetPtr(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
+    auto Seek(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
     {
         const auto pos = ::lseek64(static_cast<int>(hFile), static_cast<loff_t>(nOffset), static_cast<int>(eWay));
         return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };

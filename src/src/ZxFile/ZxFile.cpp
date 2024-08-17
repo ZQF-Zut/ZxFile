@@ -58,14 +58,19 @@ namespace ZQF
         return ZxFilePrivate::Flush(m_hFile);
     }
 
-    auto ZxFile::GetSize() const -> std::optional<std::uint64_t>
+    auto ZxFile::Bytes() const -> std::optional<std::uint64_t>
     {
-        return ZxFilePrivate::GetSize(m_hFile);
+        return ZxFilePrivate::Bytes(m_hFile);
     }
 
-    auto ZxFile::SetPtr(const std::uint64_t nOffset, const MoveWay eWay) const -> std::optional<std::uint64_t>
+    auto ZxFile::Tell() const -> std::optional<std::uint64_t>
     {
-        return ZxFilePrivate::SetPtr(m_hFile, nOffset, eWay);
+        return ZxFilePrivate::Tell(m_hFile);
+    }
+
+    auto ZxFile::Seek(const std::uint64_t nOffset, const MoveWay eWay) const -> std::optional<std::uint64_t>
+    {
+        return ZxFilePrivate::Seek(m_hFile, nOffset, eWay);
     }
 
     ZxFile::operator bool() const

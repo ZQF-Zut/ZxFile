@@ -31,8 +31,9 @@ namespace ZQF
         auto IsOpen() const -> bool;
         auto Close() -> bool;
         auto Flush() const -> bool;
-        auto GetSize() const->std::optional<std::uint64_t>;
-        auto SetPtr(const std::uint64_t nOffset, const MoveWay eWay) const -> std::optional<std::uint64_t>;
+        auto Bytes() const->std::optional<std::uint64_t>;
+        auto Tell() const->std::optional<std::uint64_t>;
+        auto Seek(const std::uint64_t nOffset, const MoveWay eWay) const -> std::optional<std::uint64_t>;
 
     public:
         template <class T> auto Get() -> T;

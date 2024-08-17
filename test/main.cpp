@@ -35,12 +35,12 @@ auto main() -> int
 
 
         ZQF::ZxFile ofs{ "123.txt", ZQF::ZxFile::OpenMod::ReadSafe };
-        assert(ofs.GetSize().value() == 12);
+        assert(ofs.Bytes().value() == 12);
 
-        ofs.SetPtr(4, ZQF::ZxFile::MoveWay::Beg);
+        ofs.Seek(4, ZQF::ZxFile::MoveWay::Set);
         assert(ofs.Get<uint64_t>() == 0x112233);
 
-        ofs.SetPtr(0, ZQF::ZxFile::MoveWay::Beg);
+        ofs.Seek(0, ZQF::ZxFile::MoveWay::Set);
         assert(ofs.Get<uint32_t>() == 12);
 
         {
