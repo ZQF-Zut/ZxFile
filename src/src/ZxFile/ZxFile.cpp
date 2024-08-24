@@ -25,9 +25,9 @@ namespace ZQF
 
     auto ZxFile::Open(const std::string_view msPath, const OpenMod eMode) -> void
     {
-        if (this->IsOpen()) { throw std::runtime_error(std::format("ZxFile::Open(): already holds a file handle -> msPath: {}", msPath)); }
+        if (this->IsOpen()) { throw std::runtime_error(std::string{ "ZxFile::Open(): already holds a file handle -> msPath: " }.append(msPath)); }
         const auto file_id_opt = ZxFilePrivate::Open(msPath, eMode);
-        if (file_id_opt.has_value() == false) { throw std::runtime_error(std::format("ZxFile::Open(): open file failed! -> msPath: {}", msPath)); }
+        if (file_id_opt.has_value() == false) { throw std::runtime_error(std::string{ "ZxFile::Open(): open file failed! -> msPath: " }.append(msPath)); }
         m_hFile = *file_id_opt;
     }
 

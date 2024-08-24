@@ -1,5 +1,4 @@
 #pragma once
-#include <format>
 #include <stdexcept>
 #include <ZxFile/Platform.h>
 
@@ -111,6 +110,6 @@ namespace ZQF
     auto ZxFile::SaveDataViaPath(const std::string_view msPath, const std::span<T, S> spData, const bool isForceSave, const bool isCreateDires) -> void
     {
         const auto status = ZxFilePrivate::SaveDataViaPathImp(msPath, { reinterpret_cast<const std::uint8_t*>(spData.data()), spData.size_bytes() }, isForceSave, isCreateDires);
-        if (status == false) { throw std::runtime_error(std::format("ZxFile::SaveDataViaPath(): save data error! -> msPath: {}", msPath)); }
+        if (status == false) { throw std::runtime_error(std::string{ "ZxFile::SaveDataViaPath(): save data error! -> msPath: " }.append(msPath)); }
     }
 }
