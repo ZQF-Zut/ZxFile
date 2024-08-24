@@ -15,7 +15,7 @@
 namespace ZQF::ZxFilePrivate
 {
 #ifdef _WIN32
-    static auto PathUtf8ToWide(const std::string_view msPath) -> std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>
+    static auto PathUTF8ToWide(const std::string_view msPath) -> std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>
     {
         const auto buffer_max_chars = ((msPath.size() * sizeof(char)) + 1) * 2;
         auto buffer = std::make_unique_for_overwrite<wchar_t[]>(buffer_max_chars);
@@ -59,7 +59,7 @@ namespace ZQF::ZxFilePrivate
                 path_wide_buffer.get()[pos + 1] = file_name_mask_char_tmp;
             };
 
-        auto wide_path = PathUtf8ToWide(msPath);
+        const auto wide_path = PathUTF8ToWide(msPath);
         if (isCreateDirectories) { fn_create_directories(wide_path); }
         const auto hfile = ::CreateFileW(wide_path.first.data(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, isCoverExists ? CREATE_ALWAYS : CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
         if (hfile == INVALID_HANDLE_VALUE) { return false; }
@@ -89,7 +89,7 @@ namespace ZQF::ZxFilePrivate
             break;
         }
 
-        const auto handle = ::CreateFileW(PathUtf8ToWide(msPath).first.data(), access, FILE_SHARE_READ, nullptr, attributes, FILE_ATTRIBUTE_NORMAL, nullptr);
+        const auto handle = ::CreateFileW(PathUTF8ToWide(msPath).first.data(), access, FILE_SHARE_READ, nullptr, attributes, FILE_ATTRIBUTE_NORMAL, nullptr);
         return (handle == INVALID_HANDLE_VALUE) ? std::nullopt : std::optional{ reinterpret_cast<std::uintptr_t>(handle) };
     }
 
@@ -113,7 +113,7 @@ namespace ZQF::ZxFilePrivate
     {
         LARGE_INTEGER new_pos;
         const LARGE_INTEGER move_distance{ .QuadPart = 0 };
-        const bool status = (::SetFilePointerEx(reinterpret_cast<const HANDLE>(hFile), move_distance, &new_pos, FILE_CURRENT) != FALSE);
+        const auto status = (::SetFilePointerEx(reinterpret_cast<const HANDLE>(hFile), move_distance, &new_pos, FILE_CURRENT) != FALSE);
         return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
@@ -121,21 +121,21 @@ namespace ZQF::ZxFilePrivate
     {
         LARGE_INTEGER new_pos;
         const LARGE_INTEGER move_distance = { .QuadPart = static_cast<LONGLONG>((nOffset)) };
-        const bool status = (::SetFilePointerEx(reinterpret_cast<const HANDLE>(hFile), move_distance, &new_pos, static_cast<DWORD>(eWay)) != FALSE);
+        const auto status = (::SetFilePointerEx(reinterpret_cast<const HANDLE>(hFile), move_distance, &new_pos, static_cast<DWORD>(eWay)) != FALSE);
         return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
     auto Read(const FILE_HANLDE_TYPE hFile, const std::span<std::uint8_t> spBuffer) -> std::optional<std::size_t>
     {
         DWORD read{};
-        const bool status = (::ReadFile(reinterpret_cast<const HANDLE>(hFile), spBuffer.data(), static_cast<DWORD>(spBuffer.size_bytes()), &read, nullptr) != FALSE);
+        const auto status = (::ReadFile(reinterpret_cast<const HANDLE>(hFile), spBuffer.data(), static_cast<DWORD>(spBuffer.size_bytes()), &read, nullptr) != FALSE);
         return status ? std::optional<std::size_t>{ static_cast<std::size_t>(read) } : std::nullopt;
     }
 
     auto Write(const FILE_HANLDE_TYPE hFile, const std::span<const std::uint8_t> spData) -> std::optional<std::size_t>
     {
         DWORD written{};
-        const bool status = (::WriteFile(reinterpret_cast<const HANDLE>(hFile), spData.data(), static_cast<DWORD>(spData.size_bytes()), &written, nullptr) != FALSE);
+        const auto status = (::WriteFile(reinterpret_cast<const HANDLE>(hFile), spData.data(), static_cast<DWORD>(spData.size_bytes()), &written, nullptr) != FALSE);
         return status ? std::optional<std::size_t>{ static_cast<std::size_t>(written) } : std::nullopt;
     }
 #else

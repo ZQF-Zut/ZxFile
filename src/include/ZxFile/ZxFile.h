@@ -13,12 +13,12 @@ namespace ZQF
         using MoveWay = ZxFilePrivate::MoveWay;
 
     private:
-        ZxFilePrivate::FILE_HANLDE_TYPE m_hFile = ZxFilePrivate::FILE_HANLDE_INVALID;
+        ZxFilePrivate::FILE_HANLDE_TYPE m_hFile{ ZxFilePrivate::FILE_HANLDE_INVALID };
 
     public:
         ZxFile();
         ZxFile(const std::string_view msPath, const OpenMod eMode);
-        ZxFile(const std::u8string_view phPath, const OpenMod eMode);
+        ZxFile(const std::u8string_view u8Path, const OpenMod eMode);
         ~ZxFile();
 
     public:
@@ -28,6 +28,7 @@ namespace ZQF
 
     public:
         auto Open(const std::string_view msPath, const OpenMod eMode) -> void;
+        auto OpenNoThrow(const std::string_view msPath, const OpenMod eMode) noexcept -> bool;
         auto IsOpen() const -> bool;
         auto Close() -> bool;
         auto Flush() const -> bool;
@@ -109,7 +110,7 @@ namespace ZQF
     template <class T, std::size_t S>
     auto ZxFile::SaveDataViaPath(const std::string_view msPath, const std::span<T, S> spData, const bool isForceSave, const bool isCreateDires) -> void
     {
-        bool status = ZxFilePrivate::SaveDataViaPathImp(msPath, { reinterpret_cast<const std::uint8_t*>(spData.data()), spData.size_bytes() }, isForceSave, isCreateDires);
-        if (status == false) { throw std::runtime_error(std::format("ZxFile::SaveDataViaPath<>(): save data error! -> msPath: {}", msPath)); }
+        const auto status = ZxFilePrivate::SaveDataViaPathImp(msPath, { reinterpret_cast<const std::uint8_t*>(spData.data()), spData.size_bytes() }, isForceSave, isCreateDires);
+        if (status == false) { throw std::runtime_error(std::format("ZxFile::SaveDataViaPath(): save data error! -> msPath: {}", msPath)); }
     }
 }

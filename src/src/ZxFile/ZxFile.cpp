@@ -13,9 +13,9 @@ namespace ZQF
         this->Open(msPath, eMode);
     }
 
-    ZxFile::ZxFile(const std::u8string_view phPath, const OpenMod eMode)
+    ZxFile::ZxFile(const std::u8string_view u8Path, const OpenMod eMode)
     {
-        this->Open({ reinterpret_cast<const char*>(phPath.data()), phPath.size() }, eMode);
+        this->Open({ reinterpret_cast<const char*>(u8Path.data()), u8Path.size() }, eMode);
     }
 
     ZxFile::~ZxFile()
@@ -25,19 +25,19 @@ namespace ZQF
 
     auto ZxFile::Open(const std::string_view msPath, const OpenMod eMode) -> void
     {
-        if (m_hFile != ZxFilePrivate::FILE_HANLDE_INVALID)
-        {
-            throw std::runtime_error(std::format("ZxFile: already holds a file handle -> msPath: {}", msPath));
-        }
+        if (this->IsOpen()) { throw std::runtime_error(std::format("ZxFile::Open(): already holds a file handle -> msPath: {}", msPath)); }
+        const auto file_id_opt = ZxFilePrivate::Open(msPath, eMode);
+        if (file_id_opt.has_value() == false) { throw std::runtime_error(std::format("ZxFile::Open(): open file failed! -> msPath: {}", msPath)); }
+        m_hFile = *file_id_opt;
+    }
 
-        if (const auto file_id_opt = ZxFilePrivate::Open(msPath, eMode))
-        {
-            m_hFile = *file_id_opt;
-        }
-        else
-        {
-            throw std::runtime_error(std::format("ZxFile: open file failed! -> msPath: {}", msPath));
-        }
+    auto ZxFile::OpenNoThrow(const std::string_view msPath, const OpenMod eMode) noexcept -> bool
+    {
+        if (this->IsOpen()) { return false; }
+        const auto file_id_opt = ZxFilePrivate::Open(msPath, eMode);
+        if (file_id_opt.has_value() == false) { return false; }
+        m_hFile = *file_id_opt;
+        return true;
     }
 
     auto ZxFile::IsOpen() const -> bool
@@ -47,8 +47,8 @@ namespace ZQF
 
     auto ZxFile::Close() -> bool
     {
-        if (m_hFile == ZxFilePrivate::FILE_HANLDE_INVALID) { return true; }
-        bool status = ZxFilePrivate::Close(m_hFile);
+        if (this->IsOpen() == false) { return false; }
+        const auto status = ZxFilePrivate::Close(m_hFile);
         m_hFile = ZxFilePrivate::FILE_HANLDE_INVALID;
         return status;
     }

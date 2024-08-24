@@ -56,6 +56,8 @@ auto main() -> int
             assert(u8_buffer_raw == u8_buffer_read);
         }
 
+        ZQF::ZxFile noexcept_open;
+        assert(noexcept_open.OpenNoThrow("1290u012nf812", ZQF::ZxFile::OpenMod::ReadSafe) == false);
 
     }
     catch (const std::exception& err)
