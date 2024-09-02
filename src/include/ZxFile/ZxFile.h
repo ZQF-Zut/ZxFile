@@ -3,6 +3,18 @@
 #include <ZxFile/Platform.h>
 
 
+namespace ZQF::ZxFilePrivate
+{
+    template<class>
+    struct is_std_span : std::false_type {};
+
+    template<class T, std::size_t Extent>
+    struct is_std_span<std::span<T, Extent>> : std::true_type {};
+
+    template<class T>
+    inline constexpr bool is_std_span_v = is_std_span<T>::value;
+}
+
 namespace ZQF
 {
     class ZxFile
@@ -48,19 +60,10 @@ namespace ZQF
 
     };
 
-    template<class>
-    struct is_std_span : std::false_type {};
-
-    template<class T, std::size_t Extent>
-    struct is_std_span<std::span<T, Extent>> : std::true_type {};
-
-    template<class T>
-    inline constexpr bool is_std_span_v = is_std_span<T>::value;
-
     template<class T>
     auto ZxFile::operator>>(T&& rfData) -> ZxFile&
     {
-        if constexpr (is_std_span_v<std::decay_t<decltype(rfData)>>)
+        if constexpr (ZxFilePrivate::is_std_span_v<std::decay_t<decltype(rfData)>>)
         {
             this->Read(rfData);
         }
@@ -75,7 +78,7 @@ namespace ZQF
     template<class T>
     auto ZxFile::operator<<(T&& rfData) -> ZxFile&
     {
-        if constexpr (is_std_span_v<std::decay_t<decltype(rfData)>>)
+        if constexpr (ZxFilePrivate::is_std_span_v<std::decay_t<decltype(rfData)>>)
         {
             this->Write(rfData);
         }
