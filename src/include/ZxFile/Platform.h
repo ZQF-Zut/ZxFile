@@ -47,8 +47,8 @@ namespace ZQF::ZxFilePrivate
     auto Seek(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>;
 
     // read data from file
-    auto Read(const FILE_HANLDE_TYPE hFile, const std::span<std::uint8_t> spBuffer) -> std::optional<std::size_t>;
+    auto Read(const FILE_HANLDE_TYPE hFile, void* pBuffer, const std::size_t nBytes) -> std::optional<std::size_t>;
 
     // write data to file
-    auto Write(const FILE_HANLDE_TYPE hFile, const std::span<const std::uint8_t> spData) -> std::optional<std::size_t>;
+    auto Write(const FILE_HANLDE_TYPE hFile, const void* pData, const std::size_t nBytes) -> std::optional<std::size_t>;
 } // namespace ZQF::ZxFilePrivate

@@ -124,17 +124,17 @@ namespace ZQF::ZxFilePrivate
         return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
-    auto Read(const FILE_HANLDE_TYPE hFile, const std::span<std::uint8_t> spBuffer) -> std::optional<std::size_t>
+    auto Read(const FILE_HANLDE_TYPE hFile, void* pBuffer, const std::size_t nBytes) -> std::optional<std::size_t>
     {
         DWORD read{};
-        const auto status = (::ReadFile(reinterpret_cast<const HANDLE>(hFile), spBuffer.data(), static_cast<DWORD>(spBuffer.size_bytes()), &read, nullptr) != FALSE);
+        const auto status = (::ReadFile(reinterpret_cast<const HANDLE>(hFile), pBuffer, static_cast<DWORD>(nBytes), &read, nullptr) != FALSE);
         return status ? std::optional<std::size_t>{ static_cast<std::size_t>(read) } : std::nullopt;
     }
 
-    auto Write(const FILE_HANLDE_TYPE hFile, const std::span<const std::uint8_t> spData) -> std::optional<std::size_t>
+    auto Write(const FILE_HANLDE_TYPE hFile, const void* pData, const std::size_t nBytes) -> std::optional<std::size_t>
     {
         DWORD written{};
-        const auto status = (::WriteFile(reinterpret_cast<const HANDLE>(hFile), spData.data(), static_cast<DWORD>(spData.size_bytes()), &written, nullptr) != FALSE);
+        const auto status = (::WriteFile(reinterpret_cast<const HANDLE>(hFile), pData, static_cast<DWORD>(nBytes), &written, nullptr) != FALSE);
         return status ? std::optional<std::size_t>{ static_cast<std::size_t>(written) } : std::nullopt;
     }
 #else
@@ -221,15 +221,15 @@ namespace ZQF::ZxFilePrivate
         return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
     }
 
-    auto Read(const FILE_HANLDE_TYPE hFile, const std::span<uint8_t> spBuffer) -> std::optional<std::size_t>
+    auto Read(const FILE_HANLDE_TYPE hFile, void* pBuffer, const std::size_t nBytes) -> std::optional<std::size_t>
     {
-        const auto read_bytes = ::read(static_cast<int>(hFile), spBuffer.data(), spBuffer.size_bytes());
+        const auto read_bytes = ::read(static_cast<int>(hFile), pBuffer, nBytes);
         return read_bytes != -1 ? std::optional{ static_cast<std::size_t>(read_bytes) } : std::nullopt;
     }
 
-    auto Write(const FILE_HANLDE_TYPE hFile, const std::span<const std::uint8_t> spData) -> std::optional<std::size_t>
+    auto Write(const FILE_HANLDE_TYPE hFile, const void* pData, const std::size_t nBytes) -> std::optional<std::size_t>
     {
-        const auto written_bytes = ::write(static_cast<int>(hFile), spData.data(), spData.size_bytes());
+        const auto written_bytes = ::write(static_cast<int>(hFile), pData, nBytes);
         return written_bytes != -1 ? std::optional{ static_cast<std::size_t>(written_bytes) } : std::nullopt;
     }
 #endif

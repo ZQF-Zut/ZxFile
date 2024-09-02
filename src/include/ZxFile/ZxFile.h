@@ -22,7 +22,7 @@ namespace ZQF
 
     public:
         explicit operator bool() const;
-        template <class T> auto operator>>(T& rfData) -> ZxFile&;
+        template <class T> auto operator>>(T&& rfData) -> ZxFile&;
         template <class T> auto operator<<(T&& rfData) -> ZxFile&;
 
     public:
@@ -37,46 +37,53 @@ namespace ZQF
 
     public:
         template <class T> auto Get() -> T;
-        template <class T> auto Put(const T& rfData) -> ZxFile&;
+        template <class T> auto Put(T&& rfData) -> ZxFile&;
         template <class T, std::size_t S> auto Write(const std::span<T, S> spData) const -> std::optional<std::size_t>;
         template <class T, std::size_t S> auto Read(const std::span<T, S> spBuffer) const -> std::optional<std::size_t>;
+        auto WriteBytes(const void* pData, const std::size_t nBytes) const -> std::optional<std::size_t>;
+        auto ReadBytes(void* pBuffer, const std::size_t nBytes) const ->std::optional<std::size_t>;
 
     public:
         template <class T, std::size_t S> static auto SaveDataViaPath(const std::string_view msPath, const std::span<T, S> spData, const bool isForceSave = true, const bool isCreateDires = true) -> void;
 
     };
 
-    template<class T>
-    auto ZxFile::operator>>(T& rfData) -> ZxFile&
-    {
-        using T_decay = std::decay_t<decltype(rfData)>;
+    template<class>
+    struct is_std_span : std::false_type {};
 
-        if constexpr (std::is_integral_v<T_decay> || std::is_floating_point_v<T_decay>)
+    template<class T, std::size_t Extent>
+    struct is_std_span<std::span<T, Extent>> : std::true_type {};
+
+    template<class T>
+    inline constexpr bool is_std_span_v = is_std_span<T>::value;
+
+    template<class T>
+    auto ZxFile::operator>>(T&& rfData) -> ZxFile&
+    {
+        if constexpr (is_std_span_v<std::decay_t<decltype(rfData)>>)
         {
-            this->Read(std::span{ &rfData, 1 });
+            this->Read(rfData);
         }
         else
         {
-            this->Read(std::span{ rfData });
+            this->ReadBytes(&rfData, sizeof(rfData));
         }
-
+        
         return *this;
     }
 
     template<class T>
     auto ZxFile::operator<<(T&& rfData) -> ZxFile&
     {
-        using T_decay = std::decay_t<decltype(rfData)>;
-
-        if constexpr (std::is_integral_v<T_decay> || std::is_floating_point_v<T_decay>)
+        if constexpr (is_std_span_v<std::decay_t<decltype(rfData)>>)
         {
-            this->Write(std::span{ &rfData, 1 });
+            this->Write(rfData);
         }
         else
         {
-            this->Write(std::span{ rfData });
+            this->WriteBytes(&rfData, sizeof(rfData));
         }
-
+        
         return *this;
     }
 
@@ -89,21 +96,21 @@ namespace ZQF
     }
 
     template <class T>
-    auto ZxFile::Put(const T& rfData) -> ZxFile&
+    auto ZxFile::Put(T&& rfData) -> ZxFile&
     {
-        return this->operator<<(rfData);
+        return this->operator<<(std::forward<T>(rfData));
     }
 
     template <class T, std::size_t S>
     auto ZxFile::Write(const std::span<T, S> spData) const -> std::optional<std::size_t>
     {
-        return ZxFilePrivate::Write(m_hFile, { reinterpret_cast<const std::uint8_t*>(spData.data()), spData.size_bytes() });
+        return this->WriteBytes(spData.data(), spData.size_bytes());
     }
 
     template <class T, std::size_t S>
     auto ZxFile::Read(const std::span<T, S> spBuffer) const -> std::optional<std::size_t>
     {
-        return ZxFilePrivate::Read(m_hFile, { reinterpret_cast<std::uint8_t*>(spBuffer.data()), spBuffer.size_bytes() });
+        return this->ReadBytes(spBuffer.data(), spBuffer.size_bytes());
     }
 
     template <class T, std::size_t S>

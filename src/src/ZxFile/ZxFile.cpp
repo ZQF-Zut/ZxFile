@@ -78,4 +78,14 @@ namespace ZQF
         return this->IsOpen();
     }
 
+    auto ZxFile::WriteBytes(const void* pData, const std::size_t nBytes) const -> std::optional<std::size_t>
+    {
+        return ZxFilePrivate::Write(m_hFile, pData, nBytes);
+    }
+
+    auto ZxFile::ReadBytes(void* pBuffer, const std::size_t nBytes) const -> std::optional<std::size_t>
+    {
+        return ZxFilePrivate::Read(m_hFile, pBuffer, nBytes);
+    }
+
 } // namespace ZQF
