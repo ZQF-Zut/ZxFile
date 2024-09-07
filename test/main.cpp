@@ -6,7 +6,7 @@
 #include <ZxFile/ZxFile.h>
 
 
-auto main() -> int
+auto main(void) -> int
 {
     try
     {
