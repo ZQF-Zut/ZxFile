@@ -1,7 +1,7 @@
-#include <ZxFile/ZxFile.h>
+#include "ZxFile.h"
 
 
-namespace ZQF
+namespace ZQF::Zut
 {
     ZxFile::ZxFile()
     {
@@ -26,7 +26,7 @@ namespace ZQF
     auto ZxFile::Open(const std::string_view msPath, const OpenMod eMode) -> void
     {
         if (this->IsOpen()) { throw std::runtime_error(std::string{ "ZxFile::Open(): already holds a file handle -> msPath: " }.append(msPath)); }
-        const auto file_id_opt = ZxFilePrivate::Open(msPath, eMode);
+        const auto file_id_opt = ZxFilePlat::Open(msPath, eMode);
         if (file_id_opt.has_value() == false) { throw std::runtime_error(std::string{ "ZxFile::Open(): open file failed! -> msPath: " }.append(msPath)); }
         m_hFile = *file_id_opt;
     }
@@ -34,7 +34,7 @@ namespace ZQF
     auto ZxFile::OpenNoThrow(const std::string_view msPath, const OpenMod eMode) noexcept -> bool
     {
         if (this->IsOpen()) { return false; }
-        const auto file_id_opt = ZxFilePrivate::Open(msPath, eMode);
+        const auto file_id_opt = ZxFilePlat::Open(msPath, eMode);
         if (file_id_opt.has_value() == false) { return false; }
         m_hFile = *file_id_opt;
         return true;
@@ -42,35 +42,35 @@ namespace ZQF
 
     auto ZxFile::IsOpen() const -> bool
     {
-        return m_hFile == ZxFilePrivate::FILE_HANLDE_INVALID ? false : true;
+        return m_hFile == ZxFilePlat::FILE_HANLDE_INVALID ? false : true;
     }
 
     auto ZxFile::Close() -> bool
     {
         if (this->IsOpen() == false) { return false; }
-        const auto status = ZxFilePrivate::Close(m_hFile);
-        m_hFile = ZxFilePrivate::FILE_HANLDE_INVALID;
+        const auto status = ZxFilePlat::Close(m_hFile);
+        m_hFile = ZxFilePlat::FILE_HANLDE_INVALID;
         return status;
     }
 
     auto ZxFile::Flush() const -> bool
     {
-        return ZxFilePrivate::Flush(m_hFile);
+        return ZxFilePlat::Flush(m_hFile);
     }
 
     auto ZxFile::Bytes() const -> std::optional<std::uint64_t>
     {
-        return ZxFilePrivate::Bytes(m_hFile);
+        return ZxFilePlat::Bytes(m_hFile);
     }
 
     auto ZxFile::Tell() const -> std::optional<std::uint64_t>
     {
-        return ZxFilePrivate::Tell(m_hFile);
+        return ZxFilePlat::Tell(m_hFile);
     }
 
     auto ZxFile::Seek(const std::uint64_t nOffset, const MoveWay eWay) const -> std::optional<std::uint64_t>
     {
-        return ZxFilePrivate::Seek(m_hFile, nOffset, eWay);
+        return ZxFilePlat::Seek(m_hFile, nOffset, eWay);
     }
 
     ZxFile::operator bool() const
@@ -80,12 +80,12 @@ namespace ZQF
 
     auto ZxFile::WriteBytes(const void* pData, const std::size_t nBytes) const -> std::optional<std::size_t>
     {
-        return ZxFilePrivate::Write(m_hFile, pData, nBytes);
+        return ZxFilePlat::Write(m_hFile, pData, nBytes);
     }
 
     auto ZxFile::ReadBytes(void* pBuffer, const std::size_t nBytes) const -> std::optional<std::size_t>
     {
-        return ZxFilePrivate::Read(m_hFile, pBuffer, nBytes);
+        return ZxFilePlat::Read(m_hFile, pBuffer, nBytes);
     }
 
-} // namespace ZQF
+} // namespace ZQF::Zut

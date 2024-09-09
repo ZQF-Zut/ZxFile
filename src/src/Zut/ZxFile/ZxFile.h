@@ -1,9 +1,9 @@
 #pragma once
 #include <stdexcept>
-#include <ZxFile/Platform.h>
+#include <Zut/ZxFile/Plat.h>
 
 
-namespace ZQF::ZxFilePrivate
+namespace ZQF::Zut::ZxFilePrivate
 {
     template<class>
     struct is_std_span : std::false_type {};
@@ -15,16 +15,16 @@ namespace ZQF::ZxFilePrivate
     inline constexpr bool is_std_span_v = is_std_span<T>::value;
 }
 
-namespace ZQF
+namespace ZQF::Zut
 {
     class ZxFile
     {
     public:
-        using OpenMod = ZxFilePrivate::OpenMod;
-        using MoveWay = ZxFilePrivate::MoveWay;
+        using OpenMod = ZxFilePlat::OpenMod;
+        using MoveWay = ZxFilePlat::MoveWay;
 
     private:
-        ZxFilePrivate::FILE_HANLDE_TYPE m_hFile{ ZxFilePrivate::FILE_HANLDE_INVALID };
+        ZxFilePlat::FILE_HANLDE_TYPE m_hFile{ ZxFilePlat::FILE_HANLDE_INVALID };
 
     public:
         ZxFile();
@@ -61,7 +61,7 @@ namespace ZQF
     };
 
     template<class T>
-    auto ZxFile::operator>>(T&& rfData) -> ZxFile&
+    inline auto ZxFile::operator>>(T&& rfData) -> ZxFile&
     {
         if constexpr (ZxFilePrivate::is_std_span_v<std::decay_t<decltype(rfData)>>)
         {
@@ -76,7 +76,7 @@ namespace ZQF
     }
 
     template<class T>
-    auto ZxFile::operator<<(T&& rfData) -> ZxFile&
+    inline auto ZxFile::operator<<(T&& rfData) -> ZxFile&
     {
         if constexpr (ZxFilePrivate::is_std_span_v<std::decay_t<decltype(rfData)>>)
         {
@@ -91,7 +91,7 @@ namespace ZQF
     }
 
     template <class T>
-    auto ZxFile::Get() -> T
+    inline auto ZxFile::Get() -> T
     {
         T tmp;
         this->operator>>(tmp);
@@ -99,27 +99,27 @@ namespace ZQF
     }
 
     template <class T>
-    auto ZxFile::Put(T&& rfData) -> ZxFile&
+    inline auto ZxFile::Put(T&& rfData) -> ZxFile&
     {
         return this->operator<<(std::forward<T>(rfData));
     }
 
     template <class T, std::size_t S>
-    auto ZxFile::Write(const std::span<T, S> spData) const -> std::optional<std::size_t>
+    inline auto ZxFile::Write(const std::span<T, S> spData) const -> std::optional<std::size_t>
     {
         return this->WriteBytes(spData.data(), spData.size_bytes());
     }
 
     template <class T, std::size_t S>
-    auto ZxFile::Read(const std::span<T, S> spBuffer) const -> std::optional<std::size_t>
+    inline auto ZxFile::Read(const std::span<T, S> spBuffer) const -> std::optional<std::size_t>
     {
         return this->ReadBytes(spBuffer.data(), spBuffer.size_bytes());
     }
 
     template <class T, std::size_t S>
-    auto ZxFile::SaveDataViaPath(const std::string_view msPath, const std::span<T, S> spData, const bool isForceSave, const bool isCreateDires) -> void
+    inline auto ZxFile::SaveDataViaPath(const std::string_view msPath, const std::span<T, S> spData, const bool isForceSave, const bool isCreateDires) -> void
     {
-        const auto status = ZxFilePrivate::SaveDataViaPathImp(msPath, { reinterpret_cast<const std::uint8_t*>(spData.data()), spData.size_bytes() }, isForceSave, isCreateDires);
+        const auto status = ZxFilePlat::SaveDataViaPathImp(msPath, { reinterpret_cast<const std::uint8_t*>(spData.data()), spData.size_bytes() }, isForceSave, isCreateDires);
         if (status == false) { throw std::runtime_error(std::string{ "ZxFile::SaveDataViaPath(): save data error! -> msPath: " }.append(msPath)); }
     }
 }

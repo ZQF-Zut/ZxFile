@@ -6,7 +6,7 @@
 #include <string_view>
 
 
-namespace ZQF::ZxFilePrivate
+namespace ZQF::Zut::ZxFilePlat
 {
     using FILE_HANLDE_TYPE = std::uintptr_t;
     constexpr FILE_HANLDE_TYPE FILE_HANLDE_INVALID = UINTPTR_MAX;
@@ -51,4 +51,4 @@ namespace ZQF::ZxFilePrivate
 
     // write data to file
     auto Write(const FILE_HANLDE_TYPE hFile, const void* pData, const std::size_t nBytes) -> std::optional<std::size_t>;
-} // namespace ZQF::ZxFilePrivate
+} // namespace ZQF::Zut::ZxFilePlat

@@ -1,4 +1,4 @@
-#include <ZxFile/Platform.h>
+#include "Plat.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -11,7 +11,7 @@
 #endif
 
 
-namespace ZQF::ZxFilePrivate
+namespace ZQF::Zut::ZxFilePlat
 {
 #ifdef _WIN32
     static auto PathUTF8ToWide(const std::string_view msPath) -> std::pair<std::wstring_view, std::unique_ptr<wchar_t[]>>
@@ -233,4 +233,4 @@ namespace ZQF::ZxFilePrivate
         return written_bytes != -1 ? std::optional{ static_cast<std::size_t>(written_bytes) } : std::nullopt;
     }
 #endif
-} // namespace ZQF::ZxFilePrivate
+} // namespace ZQF::Zut::ZxFilePlat
