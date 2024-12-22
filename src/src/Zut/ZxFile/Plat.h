@@ -22,7 +22,10 @@ namespace ZQF::Zut::ZxFilePlat
     {
         ReadSafe,
         WriteSafe,
-        WriteForce
+        WriteForce,
+        ReadSafeAndWrite,
+        WriteSafeAndRead,
+        WriteForceAndRead
     };
 
     // save data

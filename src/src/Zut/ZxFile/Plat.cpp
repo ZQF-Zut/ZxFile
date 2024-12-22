@@ -86,6 +86,18 @@ namespace ZQF::Zut::ZxFilePlat
             access = GENERIC_WRITE;
             attributes = CREATE_ALWAYS;
             break;
+        case OpenMod::ReadSafeAndWrite:
+            access = GENERIC_READ | GENERIC_WRITE;
+            attributes = OPEN_EXISTING;
+            break;
+        case OpenMod::WriteSafeAndRead:
+            access = GENERIC_READ | GENERIC_WRITE;
+            attributes = CREATE_NEW;
+            break;
+        case OpenMod::WriteForceAndRead:
+            access = GENERIC_READ | GENERIC_WRITE;
+            attributes = CREATE_ALWAYS;
+            break;
         }
 
         const auto handle = ::CreateFileW(PathUTF8ToWide(msPath).first.data(), access, FILE_SHARE_READ, nullptr, attributes, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -188,6 +200,9 @@ namespace ZQF::Zut::ZxFilePlat
         case OpenMod::ReadSafe: open_mode = O_RDONLY; break;
         case OpenMod::WriteSafe: open_mode = O_CREAT | O_WRONLY | O_EXCL; break;
         case OpenMod::WriteForce: open_mode = O_CREAT | O_WRONLY | O_TRUNC; break;
+        case OpenMod::ReadSafeAndWrite: open_mode = O_RDWR; break;
+        case OpenMod::WriteSafeAndRead: open_mode = O_CREAT | O_RDWR | O_EXCL; break;
+        case OpenMod::WriteForceAndRead: open_mode = O_CREAT | O_RDWR | O_TRUNC; break;
         }
         const auto file_handle = ::open(msPath.data(), open_mode, 0666);
         return (file_handle == -1) ? std::nullopt : std::optional{ static_cast<std::uintptr_t>(file_handle) };
