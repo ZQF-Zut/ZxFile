@@ -74,11 +74,15 @@ namespace ZQF::Zut::ZxFilePlat
         DWORD access{}, attributes{};
         switch (eMode)
         {
-        case OpenMod::ReadSafe:
+        case OpenMod::ReadExists:
             access = GENERIC_READ;
             attributes = OPEN_EXISTING;
             break;
-        case OpenMod::WriteSafe:
+        case OpenMod::WriteExists:
+            access = GENERIC_WRITE;
+            attributes = OPEN_EXISTING;
+            break;
+        case OpenMod::WriteNew:
             access = GENERIC_WRITE;
             attributes = CREATE_NEW;
             break;
@@ -86,15 +90,15 @@ namespace ZQF::Zut::ZxFilePlat
             access = GENERIC_WRITE;
             attributes = CREATE_ALWAYS;
             break;
-        case OpenMod::ReadSafeAndWrite:
+        case OpenMod::ReadWriteExists:
             access = GENERIC_READ | GENERIC_WRITE;
             attributes = OPEN_EXISTING;
             break;
-        case OpenMod::WriteSafeAndRead:
+        case OpenMod::ReadWriteNew:
             access = GENERIC_READ | GENERIC_WRITE;
             attributes = CREATE_NEW;
             break;
-        case OpenMod::WriteForceAndRead:
+        case OpenMod::ReadWriteForce:
             access = GENERIC_READ | GENERIC_WRITE;
             attributes = CREATE_ALWAYS;
             break;
@@ -128,12 +132,12 @@ namespace ZQF::Zut::ZxFilePlat
         return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
-    auto Seek(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
+    auto Seek(const FILE_HANLDE_TYPE hFile, const std::int64_t nOffset, const MoveWay eWay) -> std::optional<std::int64_t>
     {
         LARGE_INTEGER new_pos;
         const LARGE_INTEGER move_distance = { .QuadPart = static_cast<LONGLONG>((nOffset)) };
         const auto status = (::SetFilePointerEx(reinterpret_cast<const HANDLE>(hFile), move_distance, &new_pos, static_cast<DWORD>(eWay)) != FALSE);
-        return status ? std::optional<std::uint64_t>{ static_cast<std::uint64_t>(new_pos.QuadPart) } : std::nullopt;
+        return status ? std::optional<std::int64_t>{ static_cast<std::int64_t>(new_pos.QuadPart) } : std::nullopt;
     }
 
     auto Read(const FILE_HANLDE_TYPE hFile, void* pBuffer, const std::size_t nBytes) -> std::optional<std::size_t>
@@ -153,34 +157,34 @@ namespace ZQF::Zut::ZxFilePlat
     auto SaveDataViaPathImp(const std::string_view msPath, const std::span<const std::uint8_t> spData, const bool isCoverExists, const bool isCreateDirectories) -> bool
     {
         auto fn_create_directories = [](const std::string_view msPath) -> void
-        {
-            const auto pos = msPath.rfind('/');
-            if ((pos == std::string_view::npos) || (pos == 1)) { return; }
-
-            auto path_buffer = std::make_unique_for_overwrite<char[]>(msPath.size());
-            std::memcpy(path_buffer.get(), msPath.data(), msPath.size());
-
-            path_buffer.get()[pos + 1] = {}; // rm file_name
-
-            char* cur_path_cstr = path_buffer.get();
-            const char* org_path_cstr = path_buffer.get();
-
-            while (*cur_path_cstr++ != '\0')
             {
-                if (*cur_path_cstr != '/') { continue; }
+                const auto pos = msPath.rfind('/');
+                if ((pos == std::string_view::npos) || (pos == 1)) { return; }
 
-                const char slash_char_tmp = *cur_path_cstr;
-                *cur_path_cstr = {};
+                auto path_buffer = std::make_unique_for_overwrite<char[]>(msPath.size());
+                std::memcpy(path_buffer.get(), msPath.data(), msPath.size());
+
+                path_buffer.get()[pos + 1] = {}; // rm file_name
+
+                char* cur_path_cstr = path_buffer.get();
+                const char* org_path_cstr = path_buffer.get();
+
+                while (*cur_path_cstr++ != '\0')
                 {
-                    if (::access(org_path_cstr, X_OK) == -1)
+                    if (*cur_path_cstr != '/') { continue; }
+
+                    const char slash_char_tmp = *cur_path_cstr;
+                    *cur_path_cstr = {};
                     {
-                        ::mkdir(org_path_cstr, 0777);
+                        if (::access(org_path_cstr, X_OK) == -1)
+                        {
+                            ::mkdir(org_path_cstr, 0777);
+                        }
                     }
+                    *cur_path_cstr = slash_char_tmp;
+                    cur_path_cstr++;
                 }
-                *cur_path_cstr = slash_char_tmp;
-                cur_path_cstr++;
-            }
-        };
+            };
 
         if (isCreateDirectories) { fn_create_directories(msPath); }
         constexpr auto create_always = O_CREAT | O_WRONLY | O_TRUNC;
@@ -197,12 +201,13 @@ namespace ZQF::Zut::ZxFilePlat
         int open_mode{};
         switch (eMode)
         {
-        case OpenMod::ReadSafe: open_mode = O_RDONLY; break;
-        case OpenMod::WriteSafe: open_mode = O_CREAT | O_WRONLY | O_EXCL; break;
+        case OpenMod::ReadExists: open_mode = O_RDONLY; break;
+        case OpenMod::WriteExists: open_mode = O_WRONLY; break;
+        case OpenMod::WriteNew: open_mode = O_CREAT | O_WRONLY | O_EXCL; break;
         case OpenMod::WriteForce: open_mode = O_CREAT | O_WRONLY | O_TRUNC; break;
-        case OpenMod::ReadSafeAndWrite: open_mode = O_RDWR; break;
-        case OpenMod::WriteSafeAndRead: open_mode = O_CREAT | O_RDWR | O_EXCL; break;
-        case OpenMod::WriteForceAndRead: open_mode = O_CREAT | O_RDWR | O_TRUNC; break;
+        case OpenMod::ReadWriteExists: open_mode = O_CREAT | O_RDWR | O_EXCL; break;
+        case OpenMod::ReadWriteNew: open_mode = O_CREAT | O_RDWR; break;
+        case OpenMod::ReadWriteForce: open_mode = O_CREAT | O_RDWR | O_TRUNC; break;
         }
         const auto file_handle = ::open(msPath.data(), open_mode, 0666);
         return (file_handle == -1) ? std::nullopt : std::optional{ static_cast<std::uintptr_t>(file_handle) };
@@ -230,10 +235,10 @@ namespace ZQF::Zut::ZxFilePlat
         return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
     }
 
-    auto Seek(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>
+    auto Seek(const FILE_HANLDE_TYPE hFile, const std::int64_t nOffset, const MoveWay eWay) -> std::optional<std::int64_t>
     {
         const auto pos = ::lseek64(static_cast<int>(hFile), static_cast<loff_t>(nOffset), static_cast<int>(eWay));
-        return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::uint64_t>(pos) };
+        return (pos == -1) ? std::nullopt : std::optional{ static_cast<std::int64_t>(pos) };
     }
 
     auto Read(const FILE_HANLDE_TYPE hFile, void* pBuffer, const std::size_t nBytes) -> std::optional<std::size_t>

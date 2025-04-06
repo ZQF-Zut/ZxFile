@@ -68,7 +68,7 @@ namespace ZQF::Zut
         return ZxFilePlat::Tell(m_hFile);
     }
 
-    auto ZxFile::Seek(const std::uint64_t nOffset, const MoveWay eWay) const -> std::optional<std::uint64_t>
+    auto ZxFile::Seek(const std::int64_t nOffset, const MoveWay eWay) const -> std::optional<std::int64_t>
     {
         return ZxFilePlat::Seek(m_hFile, nOffset, eWay);
     }

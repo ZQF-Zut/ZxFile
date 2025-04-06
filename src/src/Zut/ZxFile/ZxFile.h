@@ -45,15 +45,15 @@ namespace ZQF::Zut
         auto Flush() const -> bool;
         auto Bytes() const->std::optional<std::uint64_t>;
         auto Tell() const->std::optional<std::uint64_t>;
-        auto Seek(const std::uint64_t nOffset, const MoveWay eWay) const -> std::optional<std::uint64_t>;
+        auto Seek(const std::int64_t nOffset, const MoveWay eWay) const->std::optional<std::int64_t>;
 
     public:
         template <class T> auto Get() -> T;
         template <class T> auto Put(T&& rfData) -> ZxFile&;
-        template <class T, std::size_t S> auto Write(const std::span<T, S> spData) const -> std::optional<std::size_t>;
-        template <class T, std::size_t S> auto Read(const std::span<T, S> spBuffer) const -> std::optional<std::size_t>;
-        auto WriteBytes(const void* pData, const std::size_t nBytes) const -> std::optional<std::size_t>;
-        auto ReadBytes(void* pBuffer, const std::size_t nBytes) const ->std::optional<std::size_t>;
+        template <class T, std::size_t S> auto Write(const std::span<T, S> spData) const->std::optional<std::size_t>;
+        template <class T, std::size_t S> auto Read(const std::span<T, S> spBuffer) const->std::optional<std::size_t>;
+        auto WriteBytes(const void* pData, const std::size_t nBytes) const->std::optional<std::size_t>;
+        auto ReadBytes(void* pBuffer, const std::size_t nBytes) const->std::optional<std::size_t>;
 
     public:
         template <class T, std::size_t S> static auto SaveDataViaPath(const std::string_view msPath, const std::span<T, S> spData, const bool isForceSave = true, const bool isCreateDires = true) -> void;
@@ -71,7 +71,7 @@ namespace ZQF::Zut
         {
             this->ReadBytes(&rfData, sizeof(rfData));
         }
-        
+
         return *this;
     }
 
@@ -86,7 +86,7 @@ namespace ZQF::Zut
         {
             this->WriteBytes(&rfData, sizeof(rfData));
         }
-        
+
         return *this;
     }
 

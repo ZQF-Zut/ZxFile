@@ -1,18 +1,19 @@
 # ZxFile Main
 cmake_minimum_required(VERSION 3.25)
 
-# Project Name
+# Project
 project(Zut_ZxFile_Main)
 
-# On Test Preset
+# Config
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    include(CMakeMycfg.cmake)
+    include("cmake/ZQFSettings.cmake")
 endif()
 
 # Source
-add_subdirectory(src)
+add_subdirectory("src")
 
-# On Test Config
+# Dev
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    add_subdirectory(test)
+    add_subdirectory("test")
+    add_subdirectory("tryout")
 endif()

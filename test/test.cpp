@@ -1,0 +1,600 @@
+#include <catch2/catch_all.hpp>
+#include <Zut/ZxFile.h>
+#include <fstream>
+#include <filesystem>
+#include <vector>
+#include <string>
+#include <cstdint>
+
+// 为了方便测试，定义一个临时文件路径的辅助函数
+namespace fs = std::filesystem;
+std::string get_temp_file_path(const std::string& prefix = "zxfile_test_")
+{
+    auto temp_path = fs::temp_directory_path();
+    auto unique_filename = prefix + std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    return (temp_path / unique_filename).string();
+}
+
+// 定义一个辅助函数来检查文件是否存在
+bool file_exists(const std::string& path)
+{
+    return fs::exists(path);
+}
+
+// 定义一个辅助函数来读取文件内容
+std::string read_file_content(const std::string& path)
+{
+    std::ifstream file(path, std::ios::in | std::ios::binary);
+    if (file.is_open())
+    {
+        std::string content((std::istreambuf_iterator<char>(file)),
+            std::istreambuf_iterator<char>());
+        return content;
+    }
+    return "";
+}
+
+// 定义一个辅助函数来写入文件内容
+void write_file_content(const std::string& path, const std::string& content)
+{
+    std::ofstream file(path, std::ios::out | std::ios::binary);
+    if (file.is_open())
+    {
+        file << content;
+    }
+}
+
+TEST_CASE("ZxFile Construction and Destruction")
+{
+    SECTION("Default Constructor")
+    {
+        ZQF::Zut::ZxFile file;
+        REQUIRE_FALSE(static_cast<bool>(file));
+        REQUIRE_FALSE(file.IsOpen());
+    }
+
+    SECTION("Constructor with string_view and OpenMod::WriteNew")
+    {
+        auto temp_file = get_temp_file_path();
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+            REQUIRE(static_cast<bool>(file));
+            REQUIRE(file.IsOpen());
+        }
+        REQUIRE(file_exists(temp_file));
+        fs::remove(temp_file);
+    }
+
+    SECTION("Constructor with u8string_view and OpenMod::WriteNew")
+    {
+        auto temp_file = get_temp_file_path();
+        std::u8string u8_temp_file = reinterpret_cast<const char8_t*>(temp_file.c_str());
+        {
+            ZQF::Zut::ZxFile file(u8_temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+            REQUIRE(static_cast<bool>(file));
+            REQUIRE(file.IsOpen());
+        }
+        REQUIRE(file_exists(temp_file));
+        fs::remove(temp_file);
+    }
+
+    SECTION("Destructor Closes File")
+    {
+        auto temp_file = get_temp_file_path();
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+            REQUIRE(file.IsOpen());
+        }
+        // 在 file 对象析构后，文件应该已经被关闭
+        // 无法直接验证 m_hFile 的状态，但可以通过后续操作来间接验证
+        REQUIRE(file_exists(temp_file));
+        fs::remove(temp_file);
+    }
+}
+
+TEST_CASE("ZxFile Opening and Closing")
+{
+    auto temp_file = get_temp_file_path();
+
+    SECTION("Open and IsOpen with OpenMod::WriteNew")
+    {
+        ZQF::Zut::ZxFile file;
+        REQUIRE_FALSE(file.IsOpen());
+        file.Open(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+        REQUIRE(file.IsOpen());
+        file.Close();
+        REQUIRE_FALSE(file.IsOpen());
+    }
+
+    SECTION("OpenNoThrow Success with OpenMod::WriteNew")
+    {
+        ZQF::Zut::ZxFile file;
+        REQUIRE(file.OpenNoThrow(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew));
+        REQUIRE(file.IsOpen());
+        file.Close();
+    }
+
+    SECTION("OpenNoThrow Failure (file does not exist) with OpenMod::ReadExists")
+    {
+        ZQF::Zut::ZxFile file;
+        REQUIRE_FALSE(file.OpenNoThrow(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists));
+        REQUIRE_FALSE(file.IsOpen());
+    }
+
+    SECTION("Close Returns True on Success with OpenMod::WriteNew")
+    {
+        ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+        REQUIRE(file.IsOpen());
+        REQUIRE(file.Close());
+        REQUIRE_FALSE(file.IsOpen());
+    }
+
+    SECTION("Close Returns False if Already Closed")
+    {
+        ZQF::Zut::ZxFile file;
+        REQUIRE_FALSE(file.Close());
+        file.Open(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+        file.Close();
+        REQUIRE_FALSE(file.Close());
+    }
+
+    fs::remove(temp_file);
+}
+
+TEST_CASE("ZxFile Writing and Reading")
+{
+    auto temp_file = get_temp_file_path();
+    const char data_to_write[] = "Hello, ZxFile!";
+    const size_t write_size = sizeof(data_to_write) - 1;
+    std::vector<int> data_to_write_x = { 1, 2, 3, 4, 5 };
+
+    SECTION("WriteBytes and ReadBytes with OpenMod::WriteNew and OpenMod::ReadExists")
+    {
+        // Write
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+            REQUIRE(file.IsOpen());
+
+            auto written_bytes = file.WriteBytes(data_to_write, write_size);
+            REQUIRE(written_bytes.has_value());
+            REQUIRE(written_bytes.value() == write_size);
+            REQUIRE(file.Flush());
+            file.Close();
+        }
+
+        // Read
+        {
+            ZQF::Zut::ZxFile readFile(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists);
+            REQUIRE(readFile.IsOpen());
+            char buffer[100];
+            auto read_bytes = readFile.ReadBytes(buffer, sizeof(buffer) - 1);
+            REQUIRE(read_bytes.has_value());
+            REQUIRE(read_bytes.value() == write_size);
+            buffer[read_bytes.value()] = '\0';
+            REQUIRE(std::string(buffer) == "Hello, ZxFile!");
+            readFile.Close();
+        }
+    }
+
+    SECTION("Write and Read with span using OpenMod::WriteNew and OpenMod::ReadExists")
+    {
+        // Write
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+            REQUIRE(file.IsOpen());
+
+
+            auto written_bytes = file.Write(std::span(data_to_write_x));
+            REQUIRE(written_bytes.has_value());
+            REQUIRE(written_bytes.value() == data_to_write_x.size() * sizeof(int));
+            REQUIRE(file.Flush());
+            file.Close();
+        }
+
+        // Read
+        {
+            ZQF::Zut::ZxFile readFile(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists);
+            REQUIRE(readFile.IsOpen());
+            std::vector<int> buffer(5);
+            auto read_bytes = readFile.Read(std::span(buffer));
+            REQUIRE(read_bytes.has_value());
+            REQUIRE(read_bytes.value() == buffer.size() * sizeof(int));
+            REQUIRE(buffer == data_to_write_x);
+            readFile.Close();
+        }
+    }
+
+    SECTION("Operator << and >> for single values with OpenMod::ReadWriteNew")
+    {
+        // Write and Read in one go
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteNew);
+            REQUIRE(file.IsOpen());
+
+            int write_value = 123;
+            double write_double = 3.14;
+            file << write_value << write_double;
+            REQUIRE(file.Flush());
+            file.Seek(0, ZQF::Zut::ZxFile::MoveWay::Set);
+            int read_value = 0;
+            double read_double = 0.0;
+            file >> read_value >> read_double;
+            REQUIRE(read_value == write_value);
+            REQUIRE(read_double == write_double);
+            file.Close();
+        }
+    }
+
+    SECTION("Operator << and >> for span with OpenMod::ReadWriteNew")
+    {
+        // Write and Read in one go
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteNew);
+            REQUIRE(file.IsOpen());
+
+            std::vector<char> write_data = { 'a', 'b', 'c' };
+            file << std::span(write_data);
+            REQUIRE(file.Flush());
+            file.Seek(0, ZQF::Zut::ZxFile::MoveWay::Set);
+            std::vector<char> read_data(3);
+            file >> std::span(read_data);
+            REQUIRE(read_data == write_data);
+            file.Close();
+        }
+    }
+
+    SECTION("Get and Put with OpenMod::ReadWriteNew")
+    {
+        // Write and Read in one go
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteNew);
+            REQUIRE(file.IsOpen());
+
+            int write_value = 456;
+            file.Put(write_value);
+            REQUIRE(file.Flush());
+            file.Seek(0, ZQF::Zut::ZxFile::MoveWay::Set);
+            int read_value = file.Get<int>();
+            REQUIRE(read_value == write_value);
+            file.Close();
+        }
+    }
+
+    fs::remove(temp_file);
+}
+
+TEST_CASE("ZxFile File Information")
+{
+    auto temp_file = get_temp_file_path();
+    const std::string content = "This is some test content.";
+    write_file_content(temp_file, content);
+
+    SECTION("Bytes with OpenMod::ReadExists")
+    {
+        ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists);
+        REQUIRE(file.IsOpen());
+        auto bytes = file.Bytes();
+        REQUIRE(bytes.has_value());
+        REQUIRE(bytes.value() == content.size());
+        file.Close();
+    }
+
+    SECTION("Tell and Seek (from beginning) with OpenMod::ReadWriteExists")
+    {
+        ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteExists);
+        REQUIRE(file.IsOpen());
+        REQUIRE(file.Tell().has_value());
+        REQUIRE(file.Tell().value() == 0);
+
+        const char write_data[] = "abc";
+        file.WriteBytes(write_data, sizeof(write_data) - 1);
+        REQUIRE(file.Tell().has_value());
+        REQUIRE(file.Tell().value() == 3);
+
+        auto seek_result = file.Seek(0, ZQF::Zut::ZxFile::MoveWay::Set);
+        REQUIRE(seek_result.has_value());
+        REQUIRE(seek_result.value() == 0);
+        REQUIRE(file.Tell().has_value());
+        REQUIRE(file.Tell().value() == 0);
+
+        char buffer[4];
+        auto read_bytes = file.ReadBytes(buffer, sizeof(buffer) - 1);
+        REQUIRE(read_bytes.has_value());
+        REQUIRE(read_bytes.value() == 3);
+        buffer[read_bytes.value()] = '\0';
+        REQUIRE(std::string(buffer) == "abc");
+
+        file.Close();
+    }
+
+    SECTION("Tell and Seek (from current) with OpenMod::ReadWriteExists")
+    {
+        ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteExists);
+        REQUIRE(file.IsOpen());
+        const char write_data[] = "defghi";
+        file.WriteBytes(write_data, sizeof(write_data) - 1);
+        REQUIRE(file.Tell().has_value());
+        REQUIRE(file.Tell().value() == 6);
+
+        auto seek_result = file.Seek(-3, ZQF::Zut::ZxFile::MoveWay::Cur);
+        REQUIRE(seek_result.has_value());
+        REQUIRE(seek_result.value() == 3);
+        REQUIRE(file.Tell().has_value());
+        REQUIRE(file.Tell().value() == 3);
+
+        char buffer[4];
+        auto read_bytes = file.ReadBytes(buffer, sizeof(buffer) - 1);
+        REQUIRE(read_bytes.has_value());
+        REQUIRE(read_bytes.value() == 3);
+        buffer[read_bytes.value()] = '\0';
+        REQUIRE(std::string(buffer) == "ghi");
+
+        file.Close();
+    }
+
+    SECTION("Tell and Seek (from end) with OpenMod::ReadWriteExists")
+    {
+        ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteExists);
+        REQUIRE(file.IsOpen());
+        auto file_size = content.size();
+        auto seek_result = file.Seek(-5, ZQF::Zut::ZxFile::MoveWay::End);
+        REQUIRE(seek_result.has_value());
+        REQUIRE(seek_result.value() == file_size - 5);
+        REQUIRE(file.Tell().has_value());
+        REQUIRE(file.Tell().value() == file_size - 5);
+
+        std::vector<char> buffer(5);
+        auto read_bytes = file.Read(std::span(buffer));
+        REQUIRE(read_bytes.has_value());
+        REQUIRE(read_bytes.value() == 5);
+        REQUIRE(std::string(buffer.begin(), buffer.end()) == "tent.");
+
+        file.Close();
+    }
+
+    SECTION("Seek beyond boundaries with OpenMod::ReadExists")
+    {
+        ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists);
+        REQUIRE(file.IsOpen());
+        auto seek_result_forward = file.Seek(content.size() + 10, ZQF::Zut::ZxFile::MoveWay::Set);
+        REQUIRE(seek_result_forward.has_value());
+        REQUIRE(seek_result_forward.value() == content.size() + 10);
+
+        auto seek_result_backward = file.Seek(-content.size() - 10, ZQF::Zut::ZxFile::MoveWay::End);
+        REQUIRE_FALSE(seek_result_backward.has_value());
+
+        file.Close();
+    }
+
+    fs::remove(temp_file);
+}
+
+TEST_CASE("ZxFile Flush with OpenMod::WriteNew")
+{
+    auto temp_file = get_temp_file_path();
+    ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+    REQUIRE(file.IsOpen());
+    REQUIRE(file.Flush()); // 即使没有写入数据，Flush 也应该成功
+    file.Put(123);
+    REQUIRE(file.Flush()); // 写入数据后，Flush 应该成功
+    file.Close();
+    fs::remove(temp_file);
+}
+
+TEST_CASE("ZxFile SaveDataViaPath")
+{
+    auto temp_file = get_temp_file_path();
+    std::vector<int> data_to_save = { 10, 20, 30, 40 };
+
+    SECTION("SaveDataViaPath creates file and saves data")
+    {
+        REQUIRE_FALSE(file_exists(temp_file));
+        ZQF::Zut::ZxFile::SaveDataViaPath(temp_file, std::span(data_to_save));
+        REQUIRE(file_exists(temp_file));
+        std::vector<int> loaded_data(4);
+        ZQF::Zut::ZxFile readFile(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists);
+        REQUIRE(readFile.IsOpen());
+        readFile >> std::span(loaded_data);
+        REQUIRE(loaded_data == data_to_save);
+        readFile.Close();
+    }
+
+    SECTION("SaveDataViaPath overwrites existing file with isForceSave = true")
+    {
+        write_file_content(temp_file, "Existing content");
+        std::vector<double> new_data = { 1.1, 2.2, 3.3 };
+        ZQF::Zut::ZxFile::SaveDataViaPath(temp_file, std::span(new_data), true);
+        std::vector<double> loaded_data(3);
+        ZQF::Zut::ZxFile readFile(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists);
+        REQUIRE(readFile.IsOpen());
+        readFile >> std::span(loaded_data);
+        REQUIRE(loaded_data == new_data);
+        readFile.Close();
+    }
+
+    SECTION("SaveDataViaPath throws exception if file exists and isForceSave = false")
+    {
+        write_file_content(temp_file, "Existing content");
+        std::vector<int> some_data = { 5, 6, 7 };
+        REQUIRE_THROWS_AS(ZQF::Zut::ZxFile::SaveDataViaPath(temp_file, std::span(some_data), false), std::runtime_error);
+        // 检查文件内容是否没有被覆盖
+        REQUIRE(read_file_content(temp_file) == "Existing content");
+    }
+
+    // 注意：测试 isCreateDires 可能需要更复杂的设置，取决于 ZxFilePlat::SaveDataViaPathImp 的实现
+    // 这里假设如果路径不存在，并且 isCreateDires 为 true，则会创建目录
+
+    fs::remove(temp_file);
+}
+
+TEST_CASE("ZxFile Error Handling (Read/Write on wrong mode)")
+{
+    auto temp_file = get_temp_file_path();
+    write_file_content(temp_file, "Some initial content");
+
+    SECTION("Attempt to write to a file opened in ReadExists mode")
+    {
+        ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists);
+        REQUIRE(file.IsOpen());
+        int data = 123;
+        auto written = file.WriteBytes(&data, sizeof(data));
+        REQUIRE_FALSE(written.has_value());
+        file.Close();
+    }
+
+    SECTION("Attempt to read from a file opened in WriteNew mode")
+    {
+        ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteExists);
+        REQUIRE(file.IsOpen());
+        int data = 0;
+        auto read = file.ReadBytes(&data, sizeof(data));
+        REQUIRE_FALSE(read.has_value());
+        file.Close();
+    }
+
+    fs::remove(temp_file);
+}
+
+TEST_CASE("ZxFile Open Modes Behavior")
+{
+    auto temp_file = get_temp_file_path();
+
+    SECTION("Open in ReadExists mode should succeed if file exists, fail otherwise")
+    {
+        write_file_content(temp_file, "Existing content");
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists);
+            REQUIRE(file.IsOpen());
+        }
+        fs::remove(temp_file);
+        {
+            try
+            {
+                ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadExists);
+                REQUIRE_FALSE(true);
+            }
+            catch (const std::exception&)
+            {
+                REQUIRE(true);
+            }
+        }
+    }
+
+    SECTION("Open in WriteExists mode should succeed if file exists")
+    {
+        write_file_content(temp_file, "Existing content");
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteExists);
+            file.Seek(0, ZQF::Zut::ZxFile::MoveWay::End);
+            REQUIRE(file.IsOpen());
+            file.WriteBytes("append", 6);
+        }
+        REQUIRE(read_file_content(temp_file) == "Existing contentappend"); // Assuming it appends, might need adjustment based on actual behavior
+        fs::remove(temp_file);
+    }
+
+    SECTION("Open in WriteNew mode should create a new file and fail if it exists")
+    {
+        REQUIRE_FALSE(file_exists(temp_file));
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+            REQUIRE(file.IsOpen());
+            file.WriteBytes("new", 3);
+        }
+        REQUIRE(read_file_content(temp_file) == "new");
+        {
+            ZQF::Zut::ZxFile file;
+            file.OpenNoThrow(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteNew);
+            REQUIRE_FALSE(file.IsOpen());
+        }
+        fs::remove(temp_file);
+    }
+
+    SECTION("Open in WriteForce mode should create or truncate existing file")
+    {
+        write_file_content(temp_file, "Existing content");
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteForce);
+            REQUIRE(file.IsOpen());
+            file.WriteBytes("forced", 6);
+        }
+        REQUIRE(read_file_content(temp_file) == "forced");
+        fs::remove(temp_file);
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::WriteForce);
+            REQUIRE(file.IsOpen());
+            file.WriteBytes("created", 7);
+        }
+        REQUIRE(read_file_content(temp_file) == "created");
+        fs::remove(temp_file);
+    }
+
+    SECTION("Open in ReadWriteExists mode should succeed if file exists")
+    {
+        write_file_content(temp_file, "ReadWrite");
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteExists);
+            REQUIRE(file.IsOpen());
+            char buffer[10];
+            auto read = file.ReadBytes(buffer, 9);
+            REQUIRE(read.has_value());
+            buffer[read.value()] = '\0';
+            REQUIRE(std::string(buffer) == "ReadWrite");
+            file.Seek(0, ZQF::Zut::ZxFile::MoveWay::Set);
+            file.WriteBytes("Updated", 7);
+        }
+        REQUIRE(read_file_content(temp_file).starts_with("Updated"));
+        fs::remove(temp_file);
+    }
+
+    SECTION("Open in ReadWriteNew mode should create a new file and fail if it exists")
+    {
+        REQUIRE_FALSE(file_exists(temp_file));
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteNew);
+            REQUIRE(file.IsOpen());
+            file.WriteBytes("ToWrite", 7);
+            REQUIRE(file.Flush());
+            file.Seek(0, ZQF::Zut::ZxFile::MoveWay::Set);
+            char buffer[10];
+            auto read = file.ReadBytes(buffer, 7);
+            REQUIRE(read.has_value());
+            buffer[read.value()] = '\0';
+            REQUIRE(std::string(buffer) == "ToWrite");
+        }
+        fs::remove(temp_file);
+    }
+
+    SECTION("Open in ReadWriteForce mode should create or truncate existing file")
+    {
+        write_file_content(temp_file, "Existing");
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteForce);
+            REQUIRE(file.IsOpen());
+            file.WriteBytes("ForceRW", 7);
+            REQUIRE(file.Flush());
+            file.Seek(0, ZQF::Zut::ZxFile::MoveWay::Set);
+            char buffer[10];
+            auto read = file.ReadBytes(buffer, 7);
+            REQUIRE(read.has_value());
+            buffer[read.value()] = '\0';
+            REQUIRE(std::string(buffer) == "ForceRW");
+        }
+        REQUIRE(read_file_content(temp_file) == "ForceRW");
+        fs::remove(temp_file);
+        {
+            ZQF::Zut::ZxFile file(temp_file, ZQF::Zut::ZxFile::OpenMod::ReadWriteForce);
+            REQUIRE(file.IsOpen());
+            file.WriteBytes("CreatedRW", 9);
+            REQUIRE(file.Flush());
+            file.Seek(0, ZQF::Zut::ZxFile::MoveWay::Set);
+            char buffer[10];
+            auto read = file.ReadBytes(buffer, 9);
+            REQUIRE(read.has_value());
+            buffer[read.value()] = '\0';
+            REQUIRE(std::string(buffer) == "CreatedRW");
+        }
+        REQUIRE(read_file_content(temp_file) == "CreatedRW");
+        fs::remove(temp_file);
+    }
+}

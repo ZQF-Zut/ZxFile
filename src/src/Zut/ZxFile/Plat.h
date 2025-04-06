@@ -20,12 +20,13 @@ namespace ZQF::Zut::ZxFilePlat
 
     enum class OpenMod
     {
-        ReadSafe,
-        WriteSafe,
+        ReadExists,
+        WriteExists,
+        WriteNew,
         WriteForce,
-        ReadSafeAndWrite,
-        WriteSafeAndRead,
-        WriteForceAndRead
+        ReadWriteExists,
+        ReadWriteNew,
+        ReadWriteForce
     };
 
     // save data
@@ -47,7 +48,7 @@ namespace ZQF::Zut::ZxFilePlat
     auto Tell(const FILE_HANLDE_TYPE hFile) -> std::optional<std::uint64_t>;
 
     // set file pointer
-    auto Seek(const FILE_HANLDE_TYPE hFile, const std::uint64_t nOffset, const MoveWay eWay) -> std::optional<std::uint64_t>;
+    auto Seek(const FILE_HANLDE_TYPE hFile, const std::int64_t nOffset, const MoveWay eWay) -> std::optional<std::int64_t>;
 
     // read data from file
     auto Read(const FILE_HANLDE_TYPE hFile, void* pBuffer, const std::size_t nBytes) -> std::optional<std::size_t>;
