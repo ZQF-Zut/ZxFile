@@ -1,0 +1,148 @@
+name: zqf-zut-zxfile-ci
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  windows_x64:
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [msvc-x64-dbg, msvc-x64-rel, msvc-x64-dbg-static, msvc-x64-rel-static, clang-cl-x64-dbg, clang-cl-x64-rel, clang-cl-x64-dbg-static, clang-cl-x64-rel-static]
+
+    runs-on: windows-2022
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Config
+      run: cmake --preset=windows-${{ matrix.config }} -DZQF_DOXYGEN=OFF -DZQF_DEVELOP=OFF
+
+    - name: Build
+      run: cmake --build .build/windows-${{ matrix.config }}
+
+    - name: Testing
+      run: ctest --test-dir .build/windows-${{ matrix.config }}
+
+  windows_arm64:
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [msvc-arm64-dbg, msvc-arm64-rel, msvc-arm64-dbg-static, msvc-arm64-rel-static]
+
+    runs-on: windows-11-arm
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: arm64
+
+    - name: Config
+      run: cmake --preset=windows-${{ matrix.config }} -DZQF_DOXYGEN=OFF -DZQF_DEVELOP=OFF
+
+    - name: Build
+      run: cmake --build .build/windows-${{ matrix.config }}
+
+    - name: Testing
+      run: ctest --test-dir .build/windows-${{ matrix.config }}
+
+  ubuntu_x64:
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [gcc-x64-dbg, gcc-x64-rel, gcc-x64-rel-static-md, clang-x64-dbg, clang-x64-rel, clang-x64-rel-static-md]
+
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup
+      run: sudo apt-get update && sudo apt-get install -y gcc g++ clang cmake ninja-build
+
+    - name: Config
+      run: cmake --preset=linux-${{ matrix.config }} -DZQF_DOXYGEN=OFF -DZQF_DEVELOP=OFF
+
+    - name: Build
+      run: cmake --build .build/linux-${{ matrix.config }}
+
+    - name: Testing
+      run: ctest --test-dir .build/linux-${{ matrix.config }}
+
+  ubuntu_arm64:
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [gcc-arm64-dbg, gcc-arm64-rel, gcc-arm64-rel-static-md, clang-arm64-dbg, clang-arm64-rel, clang-arm64-rel-static-md]
+
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup
+      run: sudo apt-get update && sudo apt-get install -y gcc g++ clang cmake ninja-build
+
+    - name: Config
+      run: cmake --preset=linux-${{ matrix.config }} -DZQF_DOXYGEN=OFF -DZQF_DEVELOP=OFF
+
+    - name: Build
+      run: cmake --build .build/linux-${{ matrix.config }}
+
+    - name: Testing
+      run: ctest --test-dir .build/linux-${{ matrix.config }}
+
+  macos_x64:
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [clang-x64-dbg, clang-x64-rel]
+
+    runs-on: macos-15-intel
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup
+      run: brew install llvm@21 && export PATH="/opt/homebrew/opt/llvm@21/bin:$PATH"
+
+    - name: Config
+      run: cmake --preset=macos-${{ matrix.config }} -DZQF_DOXYGEN=OFF -DZQF_DEVELOP=OFF
+
+    - name: Build
+      run: cmake --build .build/macos-${{ matrix.config }}
+
+    - name: Testing
+      run: ctest --test-dir .build/macos-${{ matrix.config }}
+
+  macos_arm64:
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [clang-arm64-dbg, clang-arm64-rel]
+
+    runs-on: macos-15
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup
+      run: brew install llvm@21 && export PATH="/opt/homebrew/opt/llvm@21/bin:$PATH"
+
+    - name: Config
+      run: cmake --preset=macos-${{ matrix.config }} -DZQF_DOXYGEN=OFF -DZQF_DEVELOP=OFF
+
+    - name: Build
+      run: cmake --build .build/macos-${{ matrix.config }}
+
+    - name: Testing
+      run: ctest --test-dir .build/macos-${{ matrix.config }}
