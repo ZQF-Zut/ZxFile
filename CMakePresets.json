@@ -1,260 +1,681 @@
 {
-    "version": 3,
-    "configurePresets": [
-        {
-            "name": "windows-msvc-base",
-            "hidden": true,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/.build/${presetName}",
-            "installDir": "${sourceDir}/.install/${presetName}",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "cl.exe",
-                "CMAKE_CXX_COMPILER": "cl.exe",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": true,
-                "CMAKE_TOOLCHAIN_FILE": {
-                    "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-                    "type": "FILEPATH"
-                }
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
-            "name": "linux-gcc-base",
-            "hidden": true,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/.build/${presetName}",
-            "installDir": "${sourceDir}/.install/${presetName}",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": true
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
-            }
-        },
-        {
-            "name": "mingw-base",
-            "hidden": true,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/.build/${presetName}",
-            "installDir": "${sourceDir}/.install/${presetName}",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": true
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
-            "name": "msvc-x64-debug",
-            "displayName": "MSVC x64 Debug",
-            "inherits": "windows-msvc-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "VCPKG_TARGET_TRIPLET": "x64-windows"
-            }
-        },
-        {
-            "name": "msvc-x64-debug-md",
-            "displayName": "MSVC x64 Debug MD",
-            "inherits": "msvc-x64-debug",
-            "cacheVariables": {
-                "BUILD_SHARED_LIBS": true,
-                "CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS": true,
-                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebugDLL"
-            }
-        },
-        {
-            "name": "msvc-x64-release",
-            "displayName": "MSVC x64 Release",
-            "inherits": "windows-msvc-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "VCPKG_TARGET_TRIPLET": "x64-windows"
-            }
-        },
-        {
-            "name": "msvc-x64-release-static",
-            "displayName": "MSVC x64 Release Static",
-            "inherits": "msvc-x64-release",
-            "cacheVariables": {
-                "BUILD_SHARED_LIBS": false,
-                "CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS": false,
-                "VCPKG_TARGET_TRIPLET": "x64-windows-static",
-                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
-            }
-        },
-        {
-            "name": "msvc-x64-minsizerel",
-            "displayName": "MSVC x64 MinSizeRel",
-            "inherits": "msvc-x64-release",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "MinSizeRel"
-            }
-        },
-        {
-            "name": "msvc-x64-minsizerel-static",
-            "displayName": "MSVC x64 MinSizeRel Static",
-            "inherits": "msvc-x64-release-static",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "MinSizeRel"
-            }
-        },
-        {
-            "name": "msvc-x64-relwithdebinfo",
-            "displayName": "MSVC x64 RelWithDebInfo",
-            "inherits": "msvc-x64-release",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        },
-        {
-            "name": "msvc-x64-relwithdebinfo-static",
-            "displayName": "MSVC x64 RelWithDebInfo Static",
-            "inherits": "msvc-x64-release-static",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        },
-        {
-            "name": "msvc-x86-debug",
-            "displayName": "MSVC x86 Debug",
-            "inherits": "windows-msvc-base",
-            "architecture": {
-                "value": "x86",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "VCPKG_TARGET_TRIPLET": "x86-windows"
-            }
-        },
-        {
-            "name": "msvc-x86-debug-md",
-            "displayName": "MSVC x86 Debug MD",
-            "inherits": "msvc-x86-debug",
-            "cacheVariables": {
-                "BUILD_SHARED_LIBS": true,
-                "CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS": true,
-                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebugDLL"
-            }
-        },
-        {
-            "name": "msvc-x86-release",
-            "displayName": "MSVC x86 Release",
-            "inherits": "windows-msvc-base",
-            "architecture": {
-                "value": "x86",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "VCPKG_TARGET_TRIPLET": "x86-windows"
-            }
-        },
-        {
-            "name": "msvc-x86-release-static",
-            "displayName": "MSVC x86 Release Static",
-            "inherits": "msvc-x86-release",
-            "cacheVariables": {
-                "BUILD_SHARED_LIBS": false,
-                "CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS": false,
-                "VCPKG_TARGET_TRIPLET": "x86-windows-static",
-                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
-            }
-        },
-        {
-            "name": "msvc-x86-minsizerel-static",
-            "displayName": "MSVC x86 MinSizeRel Static",
-            "inherits": "msvc-x86-release-static",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "MinSizeRel"
-            }
-        },
-        {
-            "name": "msvc-x86-relwithdebinfo-static",
-            "displayName": "MSVC x86 RelWithDebInfo Static",
-            "inherits": "msvc-x86-release-static",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        },
-        {
-            "name": "gcc-x64-debug",
-            "displayName": "GCC x64 Debug",
-            "inherits": "linux-gcc-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "gcc-x64-release",
-            "displayName": "GCC x64 Release",
-            "inherits": "linux-gcc-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
-        },
-        {
-            "name": "mingw-x64-debug",
-            "displayName": "MinGW x64 Debug",
-            "inherits": "mingw-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "BUILD_SHARED_LIBS": true
-            }
-        },
-        {
-            "name": "mingw-x64-release",
-            "displayName": "MinGW x64 Release",
-            "inherits": "mingw-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
-        },
-        {
-            "name": "mingw-x64-release-static",
-            "displayName": "MinGW x64 Release Static",
-            "inherits": "mingw-x64-release",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "ZQF_MINGW_STATIC_LINK": true
-            }
-        }
-    ]
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 31
+  },
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "config-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/.build/${presetName}",
+      "installDir": "${sourceDir}/.install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "CMAKE_CATCH_DISCOVER_TESTS_DISCOVERY_MODE": "PRE_TEST",
+        "VCPKG_INSTALL_OPTIONS": "--no-print-usage",
+        "ZQF_DEVELOP": true,
+        "ZQF_TESTING": true,
+        "ZQF_DOXYGEN": true,
+        "ZQF_VCPKG": true
+      }
+    },
+    {
+      "name": "mingw-gcc-x64-dbg",
+      "displayName": "MinGW GCC x64 Debug",
+      "inherits": "mingw-gcc-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "mingw-gcc-x64-rel",
+      "displayName": "MinGW GCC x64 Release",
+      "inherits": "mingw-gcc-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "mingw-gcc-x64-rel-static",
+      "displayName": "MinGW GCC x64 Release Static",
+      "inherits": "mingw-gcc-x64-rel",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZQF_MINGW_STATIC_LINK": true
+      }
+    },
+    {
+      "name": "windows-msvc-base",
+      "inherits": "config-base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-clang-cl-base",
+      "inherits": "config-base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-cl.exe",
+        "CMAKE_CXX_COMPILER": "clang-cl.exe"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "linux-gcc-base",
+      "inherits": "config-base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "linux-clang-base",
+      "inherits": "config-base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "macos-clang-base",
+      "inherits": "config-base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "mingw-gcc-base",
+      "inherits": "config-base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      },
+      "condition": {
+        "type": "anyOf",
+        "conditions": [
+          {
+            "type": "equals",
+            "lhs": "$env{MSYSTEM}",
+            "rhs": "MINGW32"
+          },
+          {
+            "type": "equals",
+            "lhs": "$env{MSYSTEM}",
+            "rhs": "MINGW64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "macos-clang-arm64-dbg",
+      "displayName": "MacOS Clang ARM64 Debug",
+      "inherits": "macos-clang-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+    {
+      "name": "macos-clang-arm64-rel",
+      "displayName": "MacOS Clang ARM64 Release",
+      "inherits": "macos-clang-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+    {
+      "name": "macos-clang-x64-dbg",
+      "displayName": "MacOS Clang x64 Debug",
+      "inherits": "macos-clang-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64"
+      }
+    },
+    {
+      "name": "macos-clang-x64-rel",
+      "displayName": "MacOS Clang x64 Release",
+      "inherits": "macos-clang-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64"
+      }
+    },
+    {
+      "name": "linux-clang-arm64-dbg",
+      "displayName": "Linux Clang ARM64 Debug",
+      "inherits": "linux-clang-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_SYSTEM_PROCESSOR": "arm64",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux-dynamic"
+      }
+    },
+    {
+      "name": "linux-clang-arm64-rel",
+      "displayName": "Linux Clang ARM64 Release",
+      "inherits": "linux-clang-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_SYSTEM_PROCESSOR": "arm64",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux-dynamic"
+      }
+    },
+    {
+      "name": "linux-clang-arm64-dbg-static-md",
+      "displayName": "Linux Clang ARM64 Debug Static MD",
+      "inherits": "linux-clang-arm64-dbg",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm64-linux"
+      }
+    },
+    {
+      "name": "linux-clang-arm64-rel-static-md",
+      "displayName": "Linux Clang ARM64 Release Static MD",
+      "inherits": "linux-clang-arm64-rel",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm64-linux"
+      }
+    },
+    {
+      "name": "linux-clang-x64-dbg",
+      "displayName": "Linux Clang x64 Debug",
+      "inherits": "linux-clang-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      }
+    },
+    {
+      "name": "linux-clang-x64-rel",
+      "displayName": "Linux Clang x64 Release",
+      "inherits": "linux-clang-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      }
+    },
+    {
+      "name": "linux-clang-x64-dbg-static-md",
+      "displayName": "Linux Clang x64 Debug Static MD",
+      "inherits": "linux-clang-x64-dbg",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      }
+    },
+    {
+      "name": "linux-clang-x64-rel-static-md",
+      "displayName": "Linux Clang x64 Release Static MD",
+      "inherits": "linux-clang-x64-rel",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      }
+    },
+    {
+      "name": "linux-gcc-arm64-dbg",
+      "displayName": "Linux GCC ARM64 Debug",
+      "inherits": "linux-gcc-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_SYSTEM_PROCESSOR": "arm64",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux-dynamic"
+      }
+    },
+    {
+      "name": "linux-gcc-arm64-rel",
+      "displayName": "Linux GCC ARM64 Release",
+      "inherits": "linux-gcc-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_SYSTEM_PROCESSOR": "arm64",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux-dynamic"
+      }
+    },
+    {
+      "name": "linux-gcc-arm64-dbg-static-md",
+      "displayName": "Linux GCC ARM64 Debug Static MD",
+      "inherits": "linux-gcc-arm64-dbg",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm64-linux"
+      }
+    },
+    {
+      "name": "linux-gcc-arm64-rel-static-md",
+      "displayName": "Linux GCC ARM64 Release Static MD",
+      "inherits": "linux-gcc-arm64-rel",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm64-linux"
+      }
+    },
+    {
+      "name": "linux-gcc-x64-dbg",
+      "displayName": "Linux GCC x64 Debug",
+      "inherits": "linux-gcc-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      }
+    },
+    {
+      "name": "linux-gcc-x64-rel",
+      "displayName": "Linux GCC x64 Release",
+      "inherits": "linux-gcc-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      }
+    },
+    {
+      "name": "linux-gcc-x64-dbg-static-md",
+      "displayName": "Linux GCC x64 Debug Static MD",
+      "inherits": "linux-gcc-x64-dbg",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      }
+    },
+    {
+      "name": "linux-gcc-x64-rel-static-md",
+      "displayName": "Linux GCC x64 Release Static MD",
+      "inherits": "linux-gcc-x64-rel",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      }
+    },
+    {
+      "name": "windows-clang-cl-arm64-dbg",
+      "displayName": "Windows Clang-cl ARM64 Debug",
+      "inherits": "windows-clang-cl-base",
+      "architecture": {
+        "value": "ARM64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER_TARGET": "arm64-pc-windows-msvc",
+        "CMAKE_CXX_COMPILER_TARGET": "arm64-pc-windows-msvc"
+      }
+    },
+    {
+      "name": "windows-clang-cl-arm64-dbg-static",
+      "displayName": "Windows Clang-cl ARM64 Debug Static",
+      "inherits": "windows-clang-cl-arm64-dbg",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug",
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static"
+      }
+    },
+    {
+      "name": "windows-clang-cl-arm64-rel",
+      "displayName": "Windows Clang-cl ARM64 Release",
+      "inherits": "windows-clang-cl-base",
+      "architecture": {
+        "value": "ARM64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER_TARGET": "arm64-pc-windows-msvc",
+        "CMAKE_CXX_COMPILER_TARGET": "arm64-pc-windows-msvc"
+      }
+    },
+    {
+      "name": "windows-clang-cl-arm64-rel-static",
+      "displayName": "Windows Clang-cl ARM64 Release Static",
+      "inherits": "windows-clang-cl-arm64-rel",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static"
+      }
+    },
+    {
+      "name": "windows-clang-cl-arm64-msr",
+      "displayName": "Windows Clang-cl ARM64 MinSizeRel",
+      "inherits": "windows-clang-cl-arm64-rel",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-clang-cl-arm64-msr-static",
+      "displayName": "Windows Clang-cl ARM64 MinSizeRel Static",
+      "inherits": "windows-clang-cl-arm64-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-clang-cl-arm64-rwi",
+      "displayName": "Windows Clang-cl ARM64 RelWithDebInfo",
+      "inherits": "windows-clang-cl-arm64-rel",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "windows-clang-cl-arm64-rwi-static",
+      "displayName": "Windows Clang-cl ARM64 RelWithDebInfo Static",
+      "inherits": "windows-clang-cl-arm64-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "windows-clang-cl-x64-dbg",
+      "displayName": "Windows Clang-cl x64 Debug",
+      "inherits": "windows-clang-cl-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER_TARGET": "x86_64-pc-windows-msvc",
+        "CMAKE_CXX_COMPILER_TARGET": "x86_64-pc-windows-msvc"
+      }
+    },
+    {
+      "name": "windows-clang-cl-x64-dbg-static",
+      "displayName": "Windows Clang-cl x64 Debug Static",
+      "inherits": "windows-clang-cl-x64-dbg",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "windows-clang-cl-x64-rel",
+      "displayName": "Windows Clang-cl x64 Release",
+      "inherits": "windows-clang-cl-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER_TARGET": "x86_64-pc-windows-msvc",
+        "CMAKE_CXX_COMPILER_TARGET": "x86_64-pc-windows-msvc"
+      }
+    },
+    {
+      "name": "windows-clang-cl-x64-rel-static",
+      "displayName": "Windows Clang-cl x64 Release Static",
+      "inherits": "windows-clang-cl-x64-rel",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "windows-clang-cl-x64-msr",
+      "displayName": "Windows Clang-cl x64 MinSizeRel",
+      "inherits": "windows-clang-cl-x64-rel",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-clang-cl-x64-msr-static",
+      "displayName": "Windows Clang-cl x64 MinSizeRel Static",
+      "inherits": "windows-clang-cl-x64-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-clang-cl-x64-rwi",
+      "displayName": "Windows Clang-cl x64 RelWithDebInfo",
+      "inherits": "windows-clang-cl-x64-rel",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "windows-clang-cl-x64-rwi-static",
+      "displayName": "Windows Clang-cl x64 RelWithDebInfo Static",
+      "inherits": "windows-clang-cl-x64-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "windows-msvc-arm64-dbg",
+      "displayName": "Windows MSVC ARM64 Debug",
+      "inherits": "windows-msvc-base",
+      "architecture": {
+        "value": "ARM64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-msvc-arm64-dbg-static",
+      "displayName": "Windows MSVC ARM64 Debug Static",
+      "inherits": "windows-msvc-arm64-dbg",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug",
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static"
+      }
+    },
+    {
+      "name": "windows-msvc-arm64-rel",
+      "displayName": "Windows MSVC ARM64 Release",
+      "inherits": "windows-msvc-base",
+      "architecture": {
+        "value": "ARM64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-msvc-arm64-rel-static",
+      "displayName": "Windows MSVC ARM64 Release Static",
+      "inherits": "windows-msvc-arm64-rel",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static"
+      }
+    },
+    {
+      "name": "windows-msvc-arm64-msr",
+      "displayName": "Windows MSVC ARM64 MinSizeRel",
+      "inherits": "windows-msvc-arm64-rel",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-msvc-arm64-msr-static",
+      "displayName": "Windows MSVC ARM64 MinSizeRel Static",
+      "inherits": "windows-msvc-arm64-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-msvc-arm64-rwi",
+      "displayName": "Windows MSVC ARM64 RelWithDebInfo",
+      "inherits": "windows-msvc-arm64-rel",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "windows-msvc-arm64-rwi-static",
+      "displayName": "Windows MSVC ARM64 RelWithDebInfo Static",
+      "inherits": "windows-msvc-arm64-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "windows-msvc-x86-dbg",
+      "displayName": "Windows MSVC x86 Debug",
+      "inherits": "windows-msvc-base",
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-msvc-x86-rel",
+      "displayName": "Windows MSVC x86 Release",
+      "inherits": "windows-msvc-base",
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-msvc-x86-rel-static",
+      "displayName": "Windows MSVC x86 Release Static",
+      "inherits": "windows-msvc-x86-rel",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "windows-msvc-x86-msr-static",
+      "displayName": "Windows MSVC x86 MinSizeRel Static",
+      "inherits": "windows-msvc-x86-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-msvc-x86-rwi-static",
+      "displayName": "Windows MSVC x86 RelWithDebInfo Static",
+      "inherits": "windows-msvc-x86-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "windows-msvc-x64-dbg",
+      "displayName": "Windows MSVC x86-64 Debug",
+      "inherits": "windows-msvc-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-msvc-x64-dbg-static",
+      "displayName": "Windows MSVC x86-64 Debug Static",
+      "inherits": "windows-msvc-x64-dbg",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "windows-msvc-x64-rel",
+      "displayName": "Windows MSVC x86-64 Release",
+      "inherits": "windows-msvc-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-msvc-x64-rel-static",
+      "displayName": "Windows MSVC x86-64 Release Static",
+      "inherits": "windows-msvc-x64-rel",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "windows-msvc-x64-msr",
+      "displayName": "Windows MSVC x86-64 MinSizeRel",
+      "inherits": "windows-msvc-x64-rel",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-msvc-x64-msr-static",
+      "displayName": "Windows MSVC x86-64 MinSizeRel Static",
+      "inherits": "windows-msvc-x64-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-msvc-x64-rwi",
+      "displayName": "Windows MSVC x86-64 RelWithDebInfo",
+      "inherits": "windows-msvc-x64-rel",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "windows-msvc-x64-rwi-static",
+      "displayName": "Windows MSVC x86-64 RelWithDebInfo Static",
+      "inherits": "windows-msvc-x64-rel-static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    }
+  ]
 }

@@ -1,9 +1,25 @@
+# cmake
+/.build
+/.install
+
+# xmake
 .xmake/
-.vs/
-.build/
-.DS_Store
+
+# vs
+/vsxmake2022
+/.vs
+
+# vscode
 .vscode/.cache/
 .vscode/compile_commands.json
-build/
-vsxmake2022/
 
+# .vcpkg
+.vcpkg/
+
+# macos cache
+.DS_Store
+
+# profiles
+.clang-format
+.clangd
+.editorconfig

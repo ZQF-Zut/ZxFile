@@ -1,19 +1,37 @@
-# ZxFile Main
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.31)
+
+# VCPKG
+if(ZQF_VCPKG)
+  include("cmake/vcpkg/fetch.cmake")
+endif()
 
 # Project
-project(Zut_ZxFile_Main)
+project(zqf_zut_zxfile_main)
+
+# Modules
+find_package(zqf_cmake_modules CONFIG REQUIRED)
 
 # Config
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    include("cmake/ZQFSettings.cmake")
+if(ZQF_DEVELOP)
+  include("zqf_profiles")
+  include("zqf_optimizer")
+  include("zqf_settings")
+  zqf_set_output_dir()
+  zqf_optimizer_enable_lto()
+  zqf_optimizer_enable_gc_sections()
+  zqf_profiles_fetch(CLANGD EDITOR_CONFIG)
 endif()
 
 # Source
 add_subdirectory("src")
 
 # Dev
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    add_subdirectory("test")
-    add_subdirectory("tryout")
+if(ZQF_DEVELOP)
+  add_subdirectory("tryout")
+endif()
+
+# Testing
+if(ZQF_TESTING)
+  enable_testing()
+  add_subdirectory("test")
 endif()
